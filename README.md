@@ -38,3 +38,10 @@ docker compose up --build
 ## Примечания
 - Продуктовые таблицы отдельны от таблиц Flowable.
 - Для user tasks в demo BPMN используется assignee `${assignee}`; при старте передайте переменную `assignee` (`demo`/`admin`).
+
+
+## Backend (Gradle)
+```bash
+cd backend
+./gradlew bootRun
+```

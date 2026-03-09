@@ -1,12 +1,13 @@
-FROM maven:3.9.9-eclipse-temurin-21 AS build
+FROM gradle:8.10.2-jdk21 AS build
 WORKDIR /app
-COPY pom.xml .
-RUN mvn -q -DskipTests dependency:go-offline
+COPY build.gradle settings.gradle gradlew gradlew.bat ./
+COPY gradle ./gradle
+RUN ./gradlew --no-daemon dependencies
 COPY src ./src
-RUN mvn -q -DskipTests package
+RUN ./gradlew --no-daemon bootJar
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app
-COPY --from=build /app/target/workflow-backend-0.0.1-SNAPSHOT.jar app.jar
+COPY --from=build /app/build/libs/workflow-backend-0.0.1-SNAPSHOT.jar app.jar
 EXPOSE 8080
 ENTRYPOINT ["java","-jar","app.jar"]
