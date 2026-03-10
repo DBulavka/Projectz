@@ -2,6 +2,7 @@ package com.example.workflow.service;
 
 import com.example.workflow.dto.process.ProcessMetaRequest;
 import com.example.workflow.dto.process.ProcessVersionRequest;
+import com.example.workflow.entity.AuditLog;
 import com.example.workflow.entity.ProcessDefinitionMeta;
 import com.example.workflow.entity.ProcessDefinitionVersion;
 import com.example.workflow.enums.VersionStatus;
@@ -130,7 +131,7 @@ public class ProcessService {
         return versionRepository.save(v);
     }
 
-    public List<?> processAudit(Long processId) {
+    public List<AuditLog> processAudit(Long processId) {
         ownedMeta(processId);
         return auditLogRepository.findByEntityTypeAndEntityIdOrderByCreatedAtDesc("PROCESS", processId.toString());
     }
