@@ -16,8 +16,7 @@ public class ProcessDefinitionVersion {
     private Long processDefinitionMetaId;
     @Column(nullable = false)
     private Integer versionNumber;
-    @Lob
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String bpmnXml;
     private String flowableDeploymentId;
     private String flowableProcessDefinitionKey;

@@ -18,7 +18,7 @@ public class AuditLog {
     private String entityId;
     @Column(nullable = false)
     private String action;
-    @Lob
+    @Column(columnDefinition = "TEXT")
     private String payloadJson;
     @Column(nullable = false)
     private Instant createdAt;

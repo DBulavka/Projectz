@@ -2,7 +2,7 @@ server:
   port: 8080
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/workflow}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/workflow}
     username: ${SPRING_DATASOURCE_USERNAME:workflow}
     password: ${SPRING_DATASOURCE_PASSWORD:workflow}
   jpa:
