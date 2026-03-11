@@ -4,15 +4,16 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Entity
 @Table(name = "process_definition_meta")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class ProcessDefinitionMeta {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Id @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
     @Column(nullable = false)
-    private Long ownerId;
+    private UUID ownerId;
     @Column(nullable = false, unique = true)
     private String key;
     @Column(nullable = false)

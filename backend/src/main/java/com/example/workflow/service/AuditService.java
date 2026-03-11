@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -14,7 +15,7 @@ public class AuditService {
     private final AuditLogRepository auditLogRepository;
     private final ObjectMapper objectMapper;
 
-    public void log(Long userId, String entityType, String entityId, String action, Object payload) {
+    public void log(UUID userId, String entityType, String entityId, String action, Object payload) {
         String json = null;
         try { if (payload != null) json = objectMapper.writeValueAsString(payload); } catch (Exception ignored) {}
         auditLogRepository.save(AuditLog.builder()

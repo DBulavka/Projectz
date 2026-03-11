@@ -1,10 +1,11 @@
 package com.example.workflow.dto.audit;
 
 import java.time.Instant;
+import java.util.UUID;
 
 public record AuditLogDto(
-        Long id,
-        Long userId,
+        UUID id,
+        UUID userId,
         String entityType,
         String entityId,
         String action,

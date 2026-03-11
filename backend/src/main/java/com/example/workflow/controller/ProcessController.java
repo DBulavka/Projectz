@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/processes")
@@ -31,47 +32,47 @@ public class ProcessController {
     }
 
     @GetMapping("/{id}")
-    public ProcessMetaDto get(@PathVariable Long id) {
+    public ProcessMetaDto get(@PathVariable UUID id) {
         return processMapper.toDto(processService.get(id));
     }
 
     @PutMapping("/{id}")
-    public ProcessMetaDto update(@PathVariable Long id, @Valid @RequestBody ProcessMetaRequest req) {
+    public ProcessMetaDto update(@PathVariable UUID id, @Valid @RequestBody ProcessMetaRequest req) {
         return processMapper.toDto(processService.update(id, req));
     }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
+    public void delete(@PathVariable UUID id) {
         processService.delete(id);
     }
 
     @GetMapping("/{id}/versions")
-    public List<ProcessVersionDto> listVersions(@PathVariable Long id) {
+    public List<ProcessVersionDto> listVersions(@PathVariable UUID id) {
         return processMapper.toVersionDtoList(processService.listVersions(id));
     }
 
     @PostMapping("/{id}/versions")
-    public ProcessVersionDto createVersion(@PathVariable Long id, @Valid @RequestBody ProcessVersionRequest req) {
+    public ProcessVersionDto createVersion(@PathVariable UUID id, @Valid @RequestBody ProcessVersionRequest req) {
         return processMapper.toDto(processService.createVersion(id, req));
     }
 
     @GetMapping("/{id}/versions/{versionId}")
-    public ProcessVersionDto getVersion(@PathVariable Long id, @PathVariable Long versionId) {
+    public ProcessVersionDto getVersion(@PathVariable UUID id, @PathVariable UUID versionId) {
         return processMapper.toDto(processService.getVersion(id, versionId));
     }
 
     @PutMapping("/{id}/versions/{versionId}/bpmn")
-    public ProcessVersionDto updateVersion(@PathVariable Long id, @PathVariable Long versionId, @Valid @RequestBody ProcessVersionRequest req) {
+    public ProcessVersionDto updateVersion(@PathVariable UUID id, @PathVariable UUID versionId, @Valid @RequestBody ProcessVersionRequest req) {
         return processMapper.toDto(processService.updateVersionBpmn(id, versionId, req));
     }
 
     @PostMapping("/{id}/versions/{versionId}/publish")
-    public ProcessVersionDto publish(@PathVariable Long id, @PathVariable Long versionId) {
+    public ProcessVersionDto publish(@PathVariable UUID id, @PathVariable UUID versionId) {
         return processMapper.toDto(processService.publish(id, versionId));
     }
 
     @GetMapping("/{id}/audit")
-    public List<AuditLogDto> audit(@PathVariable Long id) {
+    public List<AuditLogDto> audit(@PathVariable UUID id) {
         return processMapper.toAuditDtoList(processService.processAudit(id));
     }
 }

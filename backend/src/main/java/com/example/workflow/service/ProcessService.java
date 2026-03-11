@@ -22,6 +22,7 @@ import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -53,9 +54,9 @@ public class ProcessService {
         return meta;
     }
 
-    public ProcessDefinitionMeta get(Long id) { return ownedMeta(id); }
+    public ProcessDefinitionMeta get(UUID id) { return ownedMeta(id); }
 
-    public ProcessDefinitionMeta update(Long id, ProcessMetaRequest req) {
+    public ProcessDefinitionMeta update(UUID id, ProcessMetaRequest req) {
         ProcessDefinitionMeta meta = ownedMeta(id);
         meta.setName(req.name());
         meta.setDescription(req.description());
@@ -65,18 +66,18 @@ public class ProcessService {
         return metaRepository.save(meta);
     }
 
-    public void delete(Long id) {
+    public void delete(UUID id) {
         ProcessDefinitionMeta meta = ownedMeta(id);
         metaRepository.delete(meta);
         auditService.log(securityUtils.currentUserId(), "PROCESS", id.toString(), "DELETE", null);
     }
 
-    public List<ProcessDefinitionVersion> listVersions(Long processId) {
+    public List<ProcessDefinitionVersion> listVersions(UUID processId) {
         ownedMeta(processId);
         return versionRepository.findByProcessDefinitionMetaIdOrderByVersionNumberDesc(processId);
     }
 
-    public ProcessDefinitionVersion createVersion(Long processId, ProcessVersionRequest req) {
+    public ProcessDefinitionVersion createVersion(UUID processId, ProcessVersionRequest req) {
         ownedMeta(processId);
         int count = versionRepository.countByProcessDefinitionMetaId(processId);
         ProcessDefinitionVersion v = versionRepository.save(ProcessDefinitionVersion.builder()
@@ -90,21 +91,21 @@ public class ProcessService {
         return v;
     }
 
-    public ProcessDefinitionVersion getVersion(Long processId, Long versionId) {
+    public ProcessDefinitionVersion getVersion(UUID processId, UUID versionId) {
         ownedMeta(processId);
         var v = versionRepository.findById(versionId).orElseThrow(() -> new ApiException("Version not found"));
         if (!v.getProcessDefinitionMetaId().equals(processId)) throw new ApiException("Version mismatch");
         return v;
     }
 
-    public ProcessDefinitionVersion updateVersionBpmn(Long processId, Long versionId, ProcessVersionRequest req) {
+    public ProcessDefinitionVersion updateVersionBpmn(UUID processId, UUID versionId, ProcessVersionRequest req) {
         ProcessDefinitionVersion v = getVersion(processId, versionId);
         if (v.getStatus() == VersionStatus.PUBLISHED) throw new ApiException("Published version cannot be edited");
         v.setBpmnXml(req.bpmnXml());
         return versionRepository.save(v);
     }
 
-    public ProcessDefinitionVersion publish(Long processId, Long versionId) {
+    public ProcessDefinitionVersion publish(UUID processId, UUID versionId) {
         ProcessDefinitionVersion v = getVersion(processId, versionId);
         if (v.getStatus() != VersionStatus.DRAFT) throw new ApiException("Only draft can be published");
 
@@ -131,12 +132,12 @@ public class ProcessService {
         return versionRepository.save(v);
     }
 
-    public List<AuditLog> processAudit(Long processId) {
+    public List<AuditLog> processAudit(UUID processId) {
         ownedMeta(processId);
         return auditLogRepository.findByEntityTypeAndEntityIdOrderByCreatedAtDesc("PROCESS", processId.toString());
     }
 
-    private ProcessDefinitionMeta ownedMeta(Long id) {
+    private ProcessDefinitionMeta ownedMeta(UUID id) {
         ProcessDefinitionMeta meta = metaRepository.findById(id).orElseThrow(() -> new ApiException("Process not found"));
         if (!securityUtils.isAdmin() && !meta.getOwnerId().equals(securityUtils.currentUserId())) throw new ApiException("Forbidden");
         return meta;

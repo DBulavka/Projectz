@@ -1,9 +1,10 @@
 package com.example.workflow.dto.process;
 
 import java.time.Instant;
+import java.util.UUID;
 
 public record ProcessMetaDto(
-        Long id,
+        UUID id,
         String key,
         String name,
         String description,

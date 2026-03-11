@@ -4,14 +4,15 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Entity
 @Table(name = "audit_log")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class AuditLog {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    private Long userId;
+    @Id @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+    private UUID userId;
     @Column(nullable = false)
     private String entityType;
     @Column(nullable = false)

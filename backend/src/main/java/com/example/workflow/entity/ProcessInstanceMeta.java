@@ -5,19 +5,20 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Entity
 @Table(name = "process_instance_meta")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class ProcessInstanceMeta {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Id @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
     @Column(nullable = false)
-    private Long processDefinitionMetaId;
+    private UUID processDefinitionMetaId;
     @Column(nullable = false)
-    private Long processDefinitionVersionId;
+    private UUID processDefinitionVersionId;
     @Column(nullable = false)
-    private Long ownerId;
+    private UUID ownerId;
     @Column(nullable = false, unique = true)
     private String flowableProcessInstanceId;
     @Enumerated(EnumType.STRING)

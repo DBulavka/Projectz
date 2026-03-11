@@ -1,5 +1,6 @@
 package com.example.workflow.util;
 
+import java.util.UUID;
 import com.example.workflow.exception.ApiException;
 import com.example.workflow.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +19,7 @@ public class SecurityUtils {
         return auth.getName();
     }
 
-    public Long currentUserId() {
+    public UUID currentUserId() {
         return userRepository.findByEmail(currentEmail()).orElseThrow(() -> new ApiException("User not found")).getId();
     }
 

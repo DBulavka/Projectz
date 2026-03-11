@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -31,7 +32,7 @@ public class InstanceService {
     private final HistoryService historyService;
     private final SecurityUtils securityUtils;
 
-    public ProcessInstanceMeta start(Long processId, Long versionId, StartInstanceRequest req) {
+    public ProcessInstanceMeta start(UUID processId, UUID versionId, StartInstanceRequest req) {
         ProcessDefinitionMeta meta = metaRepository.findById(processId).orElseThrow(() -> new ApiException("Process not found"));
         if (!securityUtils.isAdmin() && !meta.getOwnerId().equals(securityUtils.currentUserId())) throw new ApiException("Forbidden");
         ProcessDefinitionVersion version = versionRepository.findById(versionId).orElseThrow(() -> new ApiException("Version not found"));
@@ -53,7 +54,7 @@ public class InstanceService {
         return instanceRepository.findByOwnerIdOrderByStartedAtDesc(securityUtils.currentUserId());
     }
 
-    public ProcessInstanceMeta get(Long id) {
+    public ProcessInstanceMeta get(UUID id) {
         ProcessInstanceMeta instance = instanceRepository.findById(id).orElseThrow(() -> new ApiException("Instance not found"));
         if (!securityUtils.isAdmin() && !instance.getOwnerId().equals(securityUtils.currentUserId())) throw new ApiException("Forbidden");
 
@@ -66,7 +67,7 @@ public class InstanceService {
         return instance;
     }
 
-    public ProcessInstanceMeta cancel(Long id) {
+    public ProcessInstanceMeta cancel(UUID id) {
         ProcessInstanceMeta instance = get(id);
         runtimeService.deleteProcessInstance(instance.getFlowableProcessInstanceId(), "Cancelled by user");
         instance.setStatus(InstanceStatus.CANCELLED);
@@ -74,7 +75,7 @@ public class InstanceService {
         return instanceRepository.save(instance);
     }
 
-    public List<HistoricActivityInstance> history(Long id) {
+    public List<HistoricActivityInstance> history(UUID id) {
         ProcessInstanceMeta instance = get(id);
         return historyService.createHistoricActivityInstanceQuery()
                 .processInstanceId(instance.getFlowableProcessInstanceId())
