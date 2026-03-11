@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS users (
-    id BIGSERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY,
     email VARCHAR(255) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     role VARCHAR(32) NOT NULL,
@@ -7,8 +7,8 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 CREATE TABLE IF NOT EXISTS process_definition_meta (
-    id BIGSERIAL PRIMARY KEY,
-    owner_id BIGINT NOT NULL,
+    id UUID PRIMARY KEY,
+    owner_id UUID NOT NULL,
     key VARCHAR(255) NOT NULL UNIQUE,
     name VARCHAR(255) NOT NULL,
     description TEXT,
@@ -18,8 +18,8 @@ CREATE TABLE IF NOT EXISTS process_definition_meta (
 );
 
 CREATE TABLE IF NOT EXISTS process_definition_version (
-    id BIGSERIAL PRIMARY KEY,
-    process_definition_meta_id BIGINT NOT NULL,
+    id UUID PRIMARY KEY,
+    process_definition_meta_id UUID NOT NULL,
     version_number INT NOT NULL,
     bpmn_xml TEXT NOT NULL,
     flowable_deployment_id VARCHAR(255),
@@ -32,10 +32,10 @@ CREATE TABLE IF NOT EXISTS process_definition_version (
 );
 
 CREATE TABLE IF NOT EXISTS process_instance_meta (
-    id BIGSERIAL PRIMARY KEY,
-    process_definition_meta_id BIGINT NOT NULL,
-    process_definition_version_id BIGINT NOT NULL,
-    owner_id BIGINT NOT NULL,
+    id UUID PRIMARY KEY,
+    process_definition_meta_id UUID NOT NULL,
+    process_definition_version_id UUID NOT NULL,
+    owner_id UUID NOT NULL,
     flowable_process_instance_id VARCHAR(255) NOT NULL UNIQUE,
     status VARCHAR(32) NOT NULL,
     started_at TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -45,8 +45,8 @@ CREATE TABLE IF NOT EXISTS process_instance_meta (
 );
 
 CREATE TABLE IF NOT EXISTS audit_log (
-    id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT,
+    id UUID PRIMARY KEY,
+    user_id UUID,
     entity_type VARCHAR(64) NOT NULL,
     entity_id VARCHAR(255) NOT NULL,
     action VARCHAR(64) NOT NULL,
