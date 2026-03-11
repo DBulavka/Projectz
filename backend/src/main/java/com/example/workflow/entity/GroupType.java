@@ -7,21 +7,20 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "process_definition_meta")
+@Table(name = "group_type")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-public class ProcessDefinitionMeta {
+public class GroupType {
     @Id @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
-    @Column(nullable = false)
-    private UUID ownerGroupId;
+
     @Column(nullable = false, unique = true)
-    private String key;
+    private String code;
+
     @Column(nullable = false)
     private String name;
+
     private String description;
-    private String category;
+
     @Column(nullable = false)
     private Instant createdAt;
-    @Column(nullable = false)
-    private Instant updatedAt;
 }

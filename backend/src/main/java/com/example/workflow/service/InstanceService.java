@@ -34,7 +34,7 @@ public class InstanceService {
 
     public ProcessInstanceMeta start(UUID processId, UUID versionId, StartInstanceRequest req) {
         ProcessDefinitionMeta meta = metaRepository.findById(processId).orElseThrow(() -> new ApiException("Process not found"));
-        if (!securityUtils.isAdmin() && !meta.getOwnerId().equals(securityUtils.currentUserId())) throw new ApiException("Forbidden");
+        if (!securityUtils.isAdmin() && !securityUtils.hasGroupAccess(meta.getOwnerGroupId())) throw new ApiException("Forbidden");
         ProcessDefinitionVersion version = versionRepository.findById(versionId).orElseThrow(() -> new ApiException("Version not found"));
         if (version.getStatus() != VersionStatus.PUBLISHED) throw new ApiException("Only published version can be started");
 

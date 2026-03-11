@@ -5,6 +5,7 @@ import java.util.UUID;
 
 public record ProcessMetaDto(
         UUID id,
+        UUID ownerGroupId,
         String key,
         String name,
         String description,

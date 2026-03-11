@@ -6,15 +6,46 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS group_type (
+    id UUID PRIMARY KEY,
+    code VARCHAR(100) NOT NULL UNIQUE,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS user_group (
+    id UUID PRIMARY KEY,
+    group_type_id UUID NOT NULL,
+    key VARCHAR(255) NOT NULL UNIQUE,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    CONSTRAINT fk_group_type FOREIGN KEY (group_type_id) REFERENCES group_type(id)
+);
+
+CREATE TABLE IF NOT EXISTS user_group_membership (
+    id UUID PRIMARY KEY,
+    user_id UUID NOT NULL,
+    group_id UUID NOT NULL,
+    group_role VARCHAR(32) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    CONSTRAINT fk_group_membership_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_group_membership_group FOREIGN KEY (group_id) REFERENCES user_group(id) ON DELETE CASCADE,
+    CONSTRAINT uq_group_membership UNIQUE (user_id, group_id)
+);
+
 CREATE TABLE IF NOT EXISTS process_definition_meta (
     id UUID PRIMARY KEY,
-    owner_id UUID NOT NULL,
+    owner_group_id UUID NOT NULL,
     key VARCHAR(255) NOT NULL UNIQUE,
     name VARCHAR(255) NOT NULL,
     description TEXT,
     category VARCHAR(255),
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    CONSTRAINT fk_process_owner_group FOREIGN KEY (owner_group_id) REFERENCES user_group(id)
 );
 
 CREATE TABLE IF NOT EXISTS process_definition_version (
