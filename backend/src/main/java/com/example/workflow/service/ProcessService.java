@@ -10,6 +10,7 @@ import com.example.workflow.exception.ApiException;
 import com.example.workflow.repository.AuditLogRepository;
 import com.example.workflow.repository.ProcessDefinitionMetaRepository;
 import com.example.workflow.repository.ProcessDefinitionVersionRepository;
+import com.example.workflow.repository.UserGroupRepository;
 import com.example.workflow.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.flowable.bpmn.converter.BpmnXMLConverter;
@@ -22,6 +23,7 @@ import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -33,16 +35,23 @@ public class ProcessService {
     private final RepositoryService repositoryService;
     private final SecurityUtils securityUtils;
     private final AuditService auditService;
+    private final UserGroupRepository userGroupRepository;
 
     public List<ProcessDefinitionMeta> list() {
         if (securityUtils.isAdmin()) return metaRepository.findAll();
-        return metaRepository.findByOwnerId(securityUtils.currentUserId());
+        Set<UUID> groupIds = securityUtils.currentUserGroupIds();
+        if (groupIds.isEmpty()) return List.of();
+        return metaRepository.findByOwnerGroupIdIn(groupIds);
     }
 
     public ProcessDefinitionMeta create(ProcessMetaRequest req) {
+        if (req.ownerGroupId() == null) throw new ApiException("ownerGroupId is required");
+        if (!userGroupRepository.existsById(req.ownerGroupId())) throw new ApiException("Group not found");
+        if (!securityUtils.canManageGroup(req.ownerGroupId())) throw new ApiException("Forbidden");
+
         Instant now = Instant.now();
         ProcessDefinitionMeta meta = metaRepository.save(ProcessDefinitionMeta.builder()
-                .ownerId(securityUtils.currentUserId())
+                .ownerGroupId(req.ownerGroupId())
                 .key(req.key())
                 .name(req.name())
                 .description(req.description())
@@ -54,10 +63,10 @@ public class ProcessService {
         return meta;
     }
 
-    public ProcessDefinitionMeta get(UUID id) { return ownedMeta(id); }
+    public ProcessDefinitionMeta get(UUID id) { return accessibleMeta(id); }
 
     public ProcessDefinitionMeta update(UUID id, ProcessMetaRequest req) {
-        ProcessDefinitionMeta meta = ownedMeta(id);
+        ProcessDefinitionMeta meta = manageableMeta(id);
         meta.setName(req.name());
         meta.setDescription(req.description());
         meta.setCategory(req.category());
@@ -67,18 +76,18 @@ public class ProcessService {
     }
 
     public void delete(UUID id) {
-        ProcessDefinitionMeta meta = ownedMeta(id);
-        metaRepository.delete(meta);
+        manageableMeta(id);
+        metaRepository.deleteById(id);
         auditService.log(securityUtils.currentUserId(), "PROCESS", id.toString(), "DELETE", null);
     }
 
     public List<ProcessDefinitionVersion> listVersions(UUID processId) {
-        ownedMeta(processId);
+        accessibleMeta(processId);
         return versionRepository.findByProcessDefinitionMetaIdOrderByVersionNumberDesc(processId);
     }
 
     public ProcessDefinitionVersion createVersion(UUID processId, ProcessVersionRequest req) {
-        ownedMeta(processId);
+        manageableMeta(processId);
         int count = versionRepository.countByProcessDefinitionMetaId(processId);
         ProcessDefinitionVersion v = versionRepository.save(ProcessDefinitionVersion.builder()
                 .processDefinitionMetaId(processId)
@@ -92,13 +101,14 @@ public class ProcessService {
     }
 
     public ProcessDefinitionVersion getVersion(UUID processId, UUID versionId) {
-        ownedMeta(processId);
+        accessibleMeta(processId);
         var v = versionRepository.findById(versionId).orElseThrow(() -> new ApiException("Version not found"));
         if (!v.getProcessDefinitionMetaId().equals(processId)) throw new ApiException("Version mismatch");
         return v;
     }
 
     public ProcessDefinitionVersion updateVersionBpmn(UUID processId, UUID versionId, ProcessVersionRequest req) {
+        manageableMeta(processId);
         ProcessDefinitionVersion v = getVersion(processId, versionId);
         if (v.getStatus() == VersionStatus.PUBLISHED) throw new ApiException("Published version cannot be edited");
         v.setBpmnXml(req.bpmnXml());
@@ -106,6 +116,7 @@ public class ProcessService {
     }
 
     public ProcessDefinitionVersion publish(UUID processId, UUID versionId) {
+        manageableMeta(processId);
         ProcessDefinitionVersion v = getVersion(processId, versionId);
         if (v.getStatus() != VersionStatus.DRAFT) throw new ApiException("Only draft can be published");
 
@@ -133,13 +144,19 @@ public class ProcessService {
     }
 
     public List<AuditLog> processAudit(UUID processId) {
-        ownedMeta(processId);
+        accessibleMeta(processId);
         return auditLogRepository.findByEntityTypeAndEntityIdOrderByCreatedAtDesc("PROCESS", processId.toString());
     }
 
-    private ProcessDefinitionMeta ownedMeta(UUID id) {
+    private ProcessDefinitionMeta accessibleMeta(UUID id) {
         ProcessDefinitionMeta meta = metaRepository.findById(id).orElseThrow(() -> new ApiException("Process not found"));
-        if (!securityUtils.isAdmin() && !meta.getOwnerId().equals(securityUtils.currentUserId())) throw new ApiException("Forbidden");
+        if (!securityUtils.hasGroupAccess(meta.getOwnerGroupId())) throw new ApiException("Forbidden");
+        return meta;
+    }
+
+    private ProcessDefinitionMeta manageableMeta(UUID id) {
+        ProcessDefinitionMeta meta = metaRepository.findById(id).orElseThrow(() -> new ApiException("Process not found"));
+        if (!securityUtils.canManageGroup(meta.getOwnerGroupId())) throw new ApiException("Forbidden");
         return meta;
     }
 }

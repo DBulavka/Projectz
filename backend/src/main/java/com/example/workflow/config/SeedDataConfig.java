@@ -1,13 +1,10 @@
 package com.example.workflow.config;
 
-import com.example.workflow.entity.ProcessDefinitionMeta;
-import com.example.workflow.entity.ProcessDefinitionVersion;
-import com.example.workflow.entity.User;
+import com.example.workflow.entity.*;
+import com.example.workflow.enums.GroupRole;
 import com.example.workflow.enums.Role;
 import com.example.workflow.enums.VersionStatus;
-import com.example.workflow.repository.ProcessDefinitionMetaRepository;
-import com.example.workflow.repository.ProcessDefinitionVersionRepository;
-import com.example.workflow.repository.UserRepository;
+import com.example.workflow.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.flowable.engine.RepositoryService;
 import org.springframework.boot.CommandLineRunner;
@@ -26,6 +23,9 @@ public class SeedDataConfig {
                            PasswordEncoder encoder,
                            ProcessDefinitionMetaRepository metaRepository,
                            ProcessDefinitionVersionRepository versionRepository,
+                           GroupTypeRepository groupTypeRepository,
+                           UserGroupRepository userGroupRepository,
+                           UserGroupMembershipRepository membershipRepository,
                            RepositoryService repositoryService) {
         return args -> {
             User admin = userRepository.findByEmail("admin").orElseGet(() -> userRepository.save(User.builder()
@@ -42,9 +42,44 @@ public class SeedDataConfig {
                     .createdAt(Instant.now())
                     .build()));
 
+            GroupType department = groupTypeRepository.findByCode("department").orElseGet(() -> groupTypeRepository.save(GroupType.builder()
+                    .code("department")
+                    .name("Department")
+                    .description("Default process owning group type")
+                    .createdAt(Instant.now())
+                    .build()));
+
+            UserGroup demoGroup = userGroupRepository.findAll().stream()
+                    .filter(g -> g.getKey().equals("demo-team"))
+                    .findFirst()
+                    .orElseGet(() -> userGroupRepository.save(UserGroup.builder()
+                            .groupTypeId(department.getId())
+                            .key("demo-team")
+                            .name("Demo Team")
+                            .description("Seeded group for demo process")
+                            .createdAt(Instant.now())
+                            .updatedAt(Instant.now())
+                            .build()));
+
+            membershipRepository.findByUserIdAndGroupId(demo.getId(), demoGroup.getId())
+                    .orElseGet(() -> membershipRepository.save(UserGroupMembership.builder()
+                            .userId(demo.getId())
+                            .groupId(demoGroup.getId())
+                            .groupRole(GroupRole.EDITOR)
+                            .createdAt(Instant.now())
+                            .build()));
+
+            membershipRepository.findByUserIdAndGroupId(admin.getId(), demoGroup.getId())
+                    .orElseGet(() -> membershipRepository.save(UserGroupMembership.builder()
+                            .userId(admin.getId())
+                            .groupId(demoGroup.getId())
+                            .groupRole(GroupRole.EDITOR)
+                            .createdAt(Instant.now())
+                            .build()));
+
             if (metaRepository.findAll().stream().noneMatch(m -> m.getKey().equals("home-chores"))) {
                 ProcessDefinitionMeta meta = metaRepository.save(ProcessDefinitionMeta.builder()
-                        .ownerId(demo.getId())
+                        .ownerGroupId(demoGroup.getId())
                         .key("home-chores")
                         .name("Домашние дела")
                         .description("Demo BPMN")
