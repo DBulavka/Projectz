@@ -1,6 +1,7 @@
 package com.example.workflow.service;
 
 import com.example.workflow.dto.task.CompleteTaskRequest;
+import com.example.workflow.dto.task.SubmitGameCodeResponse;
 import com.example.workflow.entity.GameLevelCode;
 import com.example.workflow.entity.GroupType;
 import com.example.workflow.entity.ProcessDefinitionMeta;
@@ -73,14 +74,39 @@ public class TaskServiceApp {
 
     public void complete(String taskId, CompleteTaskRequest req) {
         Task task = getTask(taskId);
-        ProcessInstanceMeta instanceMeta = instanceRepository.findByFlowableProcessInstanceId(task.getProcessInstanceId())
-                .orElseThrow(() -> new ApiException("Task instance mapping not found"));
-        ProcessDefinitionMeta processMeta = processDefinitionMetaRepository.findById(instanceMeta.getProcessDefinitionMetaId())
-                .orElseThrow(() -> new ApiException("Process not found"));
+        ProcessDefinitionMeta processMeta = resolveProcessMeta(task);
 
         if (!GAME_CATEGORY.equalsIgnoreCase(processMeta.getCategory())) {
             taskService.complete(task.getId(), variablesOrEmpty(req));
             return;
+        }
+
+        SubmitGameCodeResponse response = submitGameCodeInternal(task, processMeta, req.code(), variablesOrEmpty(req));
+        if (!response.levelCompleted()) {
+            throw new ApiException("Not all level codes entered yet");
+        }
+    }
+
+    public SubmitGameCodeResponse submitGameCode(String taskId, String code) {
+        Task task = getTask(taskId);
+        ProcessDefinitionMeta processMeta = resolveProcessMeta(task);
+        return submitGameCodeInternal(task, processMeta, code, Map.of());
+    }
+
+
+    private ProcessDefinitionMeta resolveProcessMeta(Task task) {
+        ProcessInstanceMeta instanceMeta = instanceRepository.findByFlowableProcessInstanceId(task.getProcessInstanceId())
+                .orElseThrow(() -> new ApiException("Task instance mapping not found"));
+        return processDefinitionMetaRepository.findById(instanceMeta.getProcessDefinitionMetaId())
+                .orElseThrow(() -> new ApiException("Process not found"));
+    }
+
+    private SubmitGameCodeResponse submitGameCodeInternal(Task task,
+                                                          ProcessDefinitionMeta processMeta,
+                                                          String inputCode,
+                                                          Map<String, Object> completionVariables) {
+        if (!GAME_CATEGORY.equalsIgnoreCase(processMeta.getCategory())) {
+            throw new ApiException("Codes are supported only for game processes");
         }
 
         String levelKey = task.getTaskDefinitionKey();
@@ -93,7 +119,6 @@ public class TaskServiceApp {
             throw new ApiException("No codes configured for this level");
         }
 
-        String inputCode = req.code();
         if (inputCode == null || inputCode.isBlank()) {
             throw new ApiException("Code is required for game level completion");
         }
@@ -111,9 +136,16 @@ public class TaskServiceApp {
         enteredCodes.add(inputCode);
         taskService.setVariable(task.getId(), enteredCodesVariable, new ArrayList<>(enteredCodes));
 
-        if (enteredCodes.containsAll(requiredCodes)) {
-            taskService.complete(task.getId(), variablesOrEmpty(req));
+        boolean completed = enteredCodes.containsAll(requiredCodes);
+        if (completed) {
+            taskService.complete(task.getId(), completionVariables);
         }
+
+        return new SubmitGameCodeResponse(
+                completed,
+                enteredCodes.stream().sorted().toList(),
+                requiredCodes.stream().sorted().toList()
+        );
     }
 
     private void checkTaskAccess(Task task) {
