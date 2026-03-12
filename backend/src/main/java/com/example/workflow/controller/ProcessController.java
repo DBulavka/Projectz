@@ -14,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/processes")
@@ -34,57 +33,57 @@ public class ProcessController {
     }
 
     @GetMapping("/{id}")
-    public ProcessMetaDto get(@PathVariable UUID id) {
+    public ProcessMetaDto get(@PathVariable String id) {
         return processMapper.toDto(processService.get(id));
     }
 
     @PutMapping("/{id}")
-    public ProcessMetaDto update(@PathVariable UUID id, @Valid @RequestBody ProcessMetaRequest req) {
+    public ProcessMetaDto update(@PathVariable String id, @Valid @RequestBody ProcessMetaRequest req) {
         return processMapper.toDto(processService.update(id, req));
     }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable UUID id) {
+    public void delete(@PathVariable String id) {
         processService.delete(id);
     }
 
     @GetMapping("/{id}/versions")
-    public List<ProcessVersionDto> listVersions(@PathVariable UUID id) {
+    public List<ProcessVersionDto> listVersions(@PathVariable String id) {
         return processMapper.toVersionDtoList(processService.listVersions(id));
     }
 
     @PostMapping("/{id}/versions")
-    public ProcessVersionDto createVersion(@PathVariable UUID id, @Valid @RequestBody ProcessVersionRequest req) {
-        return processMapper.toDto(processService.createVersion(id, req));
+    public ProcessVersionDto createVersion(@PathVariable String id, @Valid @RequestBody ProcessVersionRequest req) {
+        return processMapper.toVersionDto(processService.createVersion(id, req));
     }
 
     @GetMapping("/{id}/versions/{versionId}")
-    public ProcessVersionDto getVersion(@PathVariable UUID id, @PathVariable UUID versionId) {
-        return processMapper.toDto(processService.getVersion(id, versionId));
+    public ProcessVersionDto getVersion(@PathVariable String id, @PathVariable String versionId) {
+        return processMapper.toVersionDto(processService.getVersion(id, versionId));
     }
 
     @PutMapping("/{id}/versions/{versionId}/bpmn")
-    public ProcessVersionDto updateVersion(@PathVariable UUID id, @PathVariable UUID versionId, @Valid @RequestBody ProcessVersionRequest req) {
-        return processMapper.toDto(processService.updateVersionBpmn(id, versionId, req));
+    public ProcessVersionDto updateVersion(@PathVariable String id, @PathVariable String versionId, @Valid @RequestBody ProcessVersionRequest req) {
+        return processMapper.toVersionDto(processService.updateVersionBpmn(id, versionId, req));
     }
 
     @PostMapping("/{id}/versions/{versionId}/publish")
-    public ProcessVersionDto publish(@PathVariable UUID id, @PathVariable UUID versionId) {
-        return processMapper.toDto(processService.publish(id, versionId));
+    public ProcessVersionDto publish(@PathVariable String id, @PathVariable String versionId) {
+        return processMapper.toVersionDto(processService.publish(id, versionId));
     }
 
     @GetMapping("/{id}/audit")
-    public List<AuditLogDto> audit(@PathVariable UUID id) {
+    public List<AuditLogDto> audit(@PathVariable String id) {
         return processMapper.toAuditDtoList(processService.processAudit(id));
     }
 
     @GetMapping("/{id}/levels/{levelKey}/codes")
-    public GameLevelCodesDto getLevelCodes(@PathVariable UUID id, @PathVariable String levelKey) {
+    public GameLevelCodesDto getLevelCodes(@PathVariable String id, @PathVariable String levelKey) {
         return new GameLevelCodesDto(levelKey, processService.getLevelCodes(id, levelKey));
     }
 
     @PutMapping("/{id}/levels/{levelKey}/codes")
-    public GameLevelCodesDto replaceLevelCodes(@PathVariable UUID id,
+    public GameLevelCodesDto replaceLevelCodes(@PathVariable String id,
                                                @PathVariable String levelKey,
                                                @Valid @RequestBody GameLevelCodesRequest req) {
         return new GameLevelCodesDto(levelKey, processService.replaceLevelCodes(id, levelKey, req));

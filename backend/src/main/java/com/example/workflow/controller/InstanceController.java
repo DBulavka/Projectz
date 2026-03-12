@@ -9,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
@@ -18,7 +17,7 @@ public class InstanceController {
     private final InstanceMapper instanceMapper;
 
     @PostMapping("/api/processes/{id}/versions/{versionId}/start")
-    public ProcessInstanceDto start(@PathVariable UUID id, @PathVariable UUID versionId, @RequestBody(required = false) StartInstanceRequest req) {
+    public ProcessInstanceDto start(@PathVariable String id, @PathVariable String versionId, @RequestBody(required = false) StartInstanceRequest req) {
         return instanceMapper.toDto(instanceService.start(id, versionId, req == null ? new StartInstanceRequest(null, java.util.Map.of()) : req));
     }
 
@@ -28,17 +27,17 @@ public class InstanceController {
     }
 
     @GetMapping("/api/instances/{instanceId}")
-    public ProcessInstanceDto get(@PathVariable UUID instanceId) {
+    public ProcessInstanceDto get(@PathVariable String instanceId) {
         return instanceMapper.toDto(instanceService.get(instanceId));
     }
 
     @PostMapping("/api/instances/{instanceId}/cancel")
-    public ProcessInstanceDto cancel(@PathVariable UUID instanceId) {
+    public ProcessInstanceDto cancel(@PathVariable String instanceId) {
         return instanceMapper.toDto(instanceService.cancel(instanceId));
     }
 
     @GetMapping("/api/instances/{instanceId}/history")
-    public List<HistoricActivityDto> history(@PathVariable UUID instanceId) {
+    public List<HistoricActivityDto> history(@PathVariable String instanceId) {
         return instanceMapper.toHistoryDtoList(instanceService.history(instanceId));
     }
 }
