@@ -39,7 +39,3 @@ ALTER TABLE game_level_code
 ALTER TABLE game_level_code
     ADD CONSTRAINT fk_game_level_code_difficulty FOREIGN KEY (difficulty_id)
         REFERENCES game_code_difficulty(id);
-
-DROP INDEX IF EXISTS uq_game_level_code_value;
-CREATE UNIQUE INDEX IF NOT EXISTS uq_game_level_code_value
-    ON game_level_code(process_definition_meta_id, level_key, value, difficulty_id);

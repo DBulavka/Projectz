@@ -12,10 +12,7 @@ import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface ProcessMapper {
-    @Mapping(target = "ownerGroupId", ignore = true)
-    @Mapping(target = "description", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
+
     ProcessMetaDto toDto(ProcessDefinition entity);
 
     List<ProcessMetaDto> toMetaDtoList(List<ProcessDefinition> entities);

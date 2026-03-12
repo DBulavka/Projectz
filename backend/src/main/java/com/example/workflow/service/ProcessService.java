@@ -1,11 +1,6 @@
 package com.example.workflow.service;
 
-import com.example.workflow.dto.process.GameCodeDifficultyDto;
-import com.example.workflow.dto.process.GameLevelCodeItemDto;
-import com.example.workflow.dto.process.GameLevelCodeItemRequest;
-import com.example.workflow.dto.process.GameLevelCodesRequest;
-import com.example.workflow.dto.process.ProcessMetaRequest;
-import com.example.workflow.dto.process.ProcessVersionRequest;
+import com.example.workflow.dto.process.*;
 import com.example.workflow.entity.AuditLog;
 import com.example.workflow.entity.GameCodeDifficulty;
 import com.example.workflow.entity.GameLevelCode;
@@ -22,7 +17,6 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -121,14 +115,12 @@ public class ProcessService {
     }
 
     public List<GameLevelCodeItemDto> getLevelCodes(String processId, String levelKey) {
-        UUID processUuid = UUID.nameUUIDFromBytes(processId.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        return gameLevelCodeRepository.findByProcessDefinitionMetaIdAndLevelKeyOrderByCreatedAtAsc(processUuid, levelKey).stream()
+        return gameLevelCodeRepository.findByProcessIdAndLevelKeyOrderByCreatedAtAsc(processId, levelKey).stream()
                 .map(this::toGameLevelCodeItemDto)
                 .toList();
     }
 
     public List<GameLevelCodeItemDto> replaceLevelCodes(String processId, String levelKey, GameLevelCodesRequest req) {
-        UUID processUuid = UUID.nameUUIDFromBytes(processId.getBytes(java.nio.charset.StandardCharsets.UTF_8));
         List<GameLevelCodeItemRequest> normalizedCodes = req.codes().stream()
                 .map(code -> new GameLevelCodeItemRequest(
                         code.value().trim(),
@@ -151,7 +143,7 @@ public class ProcessService {
             throw new ApiException("At least one non-empty code with difficulty is required");
         }
 
-        List<GameLevelCode> existing = gameLevelCodeRepository.findByProcessDefinitionMetaIdAndLevelKeyOrderByCreatedAtAsc(processUuid, levelKey);
+        List<GameLevelCode> existing = gameLevelCodeRepository.findByProcessIdAndLevelKeyOrderByCreatedAtAsc(processId, levelKey);
         gameLevelCodeRepository.deleteAll(existing);
 
         Instant now = Instant.now();
@@ -159,7 +151,7 @@ public class ProcessService {
                 .map(code -> {
                     GameCodeDifficulty difficulty = findOrCreateDifficulty(code.difficultyValue(), code.difficultyDescription(), now);
                     return GameLevelCode.builder()
-                            .processDefinitionMetaId(processUuid)
+                            .processId(processId)
                             .levelKey(levelKey)
                             .value(code.value())
                             .description(code.description())

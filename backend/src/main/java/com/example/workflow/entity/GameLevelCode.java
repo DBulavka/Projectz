@@ -18,8 +18,8 @@ public class GameLevelCode {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "process_definition_meta_id", nullable = false)
-    private UUID processDefinitionMetaId;
+    @Column(name = "process_id", nullable = false)
+    private String processId;
 
     @Column(name = "level_key", nullable = false)
     private String levelKey;
