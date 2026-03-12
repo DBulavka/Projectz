@@ -19,7 +19,9 @@ import org.flowable.engine.runtime.ProcessInstance;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -38,7 +40,20 @@ public class InstanceService {
         ProcessDefinitionVersion version = versionRepository.findById(versionId).orElseThrow(() -> new ApiException("Version not found"));
         if (version.getStatus() != VersionStatus.PUBLISHED) throw new ApiException("Only published version can be started");
 
-        ProcessInstance instance = runtimeService.startProcessInstanceById(version.getFlowableProcessDefinitionId(), req.variables());
+        UUID assigneeGroupId = req.assigneeGroupId();
+        if (assigneeGroupId != null && !securityUtils.isAdmin() && !securityUtils.hasGroupAccess(assigneeGroupId)) {
+            throw new ApiException("Forbidden");
+        }
+
+        Map<String, Object> variables = new HashMap<>();
+        if (req.variables() != null) {
+            variables.putAll(req.variables());
+        }
+        if (assigneeGroupId != null) {
+            variables.put("assignee", assigneeGroupId.toString());
+        }
+
+        ProcessInstance instance = runtimeService.startProcessInstanceById(version.getFlowableProcessDefinitionId(), variables);
         return instanceRepository.save(ProcessInstanceMeta.builder()
                 .processDefinitionMetaId(processId)
                 .processDefinitionVersionId(versionId)

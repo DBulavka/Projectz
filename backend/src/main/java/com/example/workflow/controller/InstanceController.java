@@ -19,7 +19,7 @@ public class InstanceController {
 
     @PostMapping("/api/processes/{id}/versions/{versionId}/start")
     public ProcessInstanceDto start(@PathVariable UUID id, @PathVariable UUID versionId, @RequestBody(required = false) StartInstanceRequest req) {
-        return instanceMapper.toDto(instanceService.start(id, versionId, req == null ? new StartInstanceRequest(java.util.Map.of()) : req));
+        return instanceMapper.toDto(instanceService.start(id, versionId, req == null ? new StartInstanceRequest(null, java.util.Map.of()) : req));
     }
 
     @GetMapping("/api/instances")

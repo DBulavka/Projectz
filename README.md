@@ -37,7 +37,8 @@ docker compose up --build
 
 ## Примечания
 - Продуктовые таблицы отдельны от таблиц Flowable.
-- Для user tasks в demo BPMN используется assignee `${assignee}`; при старте передайте переменную `assignee` (`demo`/`admin`).
+- Для user tasks в demo BPMN используется assignee `${assignee}`; при старте можно передать `assigneeGroupId` в теле запроса, тогда сервис автоматически запишет его в process variable `assignee`.
+- `GET /api/tasks/my` возвращает личные задачи пользователя и задачи групп, в которых он состоит. Поддерживается необязательный параметр `groupType` (код типа группы) для фильтрации групповых задач.
 
 
 ## Backend (Gradle)
