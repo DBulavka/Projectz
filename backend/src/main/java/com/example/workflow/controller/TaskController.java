@@ -17,8 +17,8 @@ public class TaskController {
     private final TaskMapper taskMapper;
 
     @GetMapping("/my")
-    public List<TaskDto> my() {
-        return taskMapper.toTaskDtoList(taskService.myTasks());
+    public List<TaskDto> my(@RequestParam(required = false) String groupType) {
+        return taskMapper.toTaskDtoList(taskService.myTasks(groupType));
     }
 
     @GetMapping("/{taskId}")
