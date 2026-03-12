@@ -7,5 +7,5 @@ import java.util.List;
 import java.util.UUID;
 
 public interface GameLevelCodeRepository extends JpaRepository<GameLevelCode, UUID> {
-    List<GameLevelCode> findByProcessDefinitionMetaIdAndLevelKey(UUID processDefinitionMetaId, String levelKey);
+    List<GameLevelCode> findByProcessDefinitionMetaIdAndLevelKeyOrderByCreatedAtAsc(UUID processDefinitionMetaId, String levelKey);
 }

@@ -4,5 +4,5 @@ import java.util.List;
 
 public record GameLevelCodesDto(
         String levelKey,
-        List<String> codes
+        List<GameLevelCodeItemDto> codes
 ) {}

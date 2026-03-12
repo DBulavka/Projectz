@@ -114,7 +114,7 @@ public class TaskServiceApp {
             throw new ApiException("Game level key not found");
         }
 
-        List<GameLevelCode> levelCodes = gameLevelCodeRepository.findByProcessDefinitionMetaIdAndLevelKey(processMeta.getId(), levelKey);
+        List<GameLevelCode> levelCodes = gameLevelCodeRepository.findByProcessDefinitionMetaIdAndLevelKeyOrderByCreatedAtAsc(processMeta.getId(), levelKey);
         if (levelCodes.isEmpty()) {
             throw new ApiException("No codes configured for this level");
         }
@@ -124,7 +124,7 @@ public class TaskServiceApp {
         }
 
         Set<String> requiredCodes = levelCodes.stream()
-                .map(GameLevelCode::getCode)
+                .map(GameLevelCode::getValue)
                 .collect(Collectors.toSet());
 
         if (!requiredCodes.contains(inputCode)) {
