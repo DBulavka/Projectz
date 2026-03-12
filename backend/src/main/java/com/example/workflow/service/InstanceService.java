@@ -9,9 +9,7 @@ import org.flowable.engine.history.HistoricActivityInstance;
 import org.flowable.engine.runtime.ProcessInstance;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -19,15 +17,8 @@ public class InstanceService {
     private final RuntimeService runtimeService;
     private final HistoryService historyService;
 
-    public ProcessInstance start(String processId, String versionId, StartInstanceRequest req) {
-        Map<String, Object> variables = new HashMap<>();
-        if (req.variables() != null) {
-            variables.putAll(req.variables());
-        }
-        if (req.assigneeGroupId() != null) {
-            variables.put("assignee", req.assigneeGroupId().toString());
-        }
-        return runtimeService.startProcessInstanceById(versionId, variables);
+    public ProcessInstance start(String processId, StartInstanceRequest req) {
+        return runtimeService.startProcessInstanceById(processId, req.businessKey(), req.variables());
     }
 
     public List<ProcessInstance> list() {

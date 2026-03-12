@@ -11,12 +11,7 @@ import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface InstanceMapper {
-    @Mapping(target = "processDefinitionMetaId", source = "processDefinitionKey")
-    @Mapping(target = "processDefinitionVersionId", source = "processDefinitionId")
-    @Mapping(target = "flowableProcessInstanceId", source = "id")
-    @Mapping(target = "status", constant = "RUNNING")
-    @Mapping(target = "startedAt", ignore = true)
-    @Mapping(target = "endedAt", ignore = true)
+    @Mapping(target = "processId", source = "processDefinitionId")
     ProcessInstanceDto toDto(ProcessInstance entity);
 
     List<ProcessInstanceDto> toDtoList(List<ProcessInstance> entities);

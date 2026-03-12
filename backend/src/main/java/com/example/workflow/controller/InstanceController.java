@@ -16,9 +16,9 @@ public class InstanceController {
     private final InstanceService instanceService;
     private final InstanceMapper instanceMapper;
 
-    @PostMapping("/api/processes/{id}/versions/{versionId}/start")
-    public ProcessInstanceDto start(@PathVariable String id, @PathVariable String versionId, @RequestBody(required = false) StartInstanceRequest req) {
-        return instanceMapper.toDto(instanceService.start(id, versionId, req == null ? new StartInstanceRequest(null, java.util.Map.of()) : req));
+    @PostMapping("/api/processes/{processId}/start")
+    public ProcessInstanceDto start(@PathVariable String processId, @RequestBody(required = false) StartInstanceRequest req) {
+        return instanceMapper.toDto(instanceService.start(processId, req == null ? new StartInstanceRequest(null, java.util.Map.of()) : req));
     }
 
     @GetMapping("/api/instances")
