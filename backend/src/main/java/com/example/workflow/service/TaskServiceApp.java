@@ -2,10 +2,13 @@ package com.example.workflow.service;
 
 import com.example.workflow.dto.task.CompleteTaskRequest;
 import com.example.workflow.dto.task.SubmitGameCodeResponse;
+import com.example.workflow.entity.GameCodeAttempt;
 import com.example.workflow.entity.GroupType;
 import com.example.workflow.entity.UserGroup;
 import com.example.workflow.entity.UserGroupMembership;
 import com.example.workflow.exception.ApiException;
+import com.example.workflow.repository.GameCodeAttemptRepository;
+import com.example.workflow.repository.GameLevelCodeRepository;
 import com.example.workflow.repository.GroupTypeRepository;
 import com.example.workflow.repository.UserGroupMembershipRepository;
 import com.example.workflow.repository.UserGroupRepository;
@@ -18,9 +21,10 @@ import org.flowable.task.api.Task;
 import org.flowable.task.api.history.HistoricTaskInstance;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +42,8 @@ public class TaskServiceApp {
     private final UserGroupMembershipRepository membershipRepository;
     private final UserGroupRepository userGroupRepository;
     private final GroupTypeRepository groupTypeRepository;
+    private final GameLevelCodeRepository gameLevelCodeRepository;
+    private final GameCodeAttemptRepository gameCodeAttemptRepository;
 
     public List<Task> myTasks(String groupTypeCode) {
         Map<String, Task> tasksById = new LinkedHashMap<>();
@@ -67,7 +73,7 @@ public class TaskServiceApp {
         taskService.complete(task.getId(), variablesOrEmpty(req));
     }
 
-    public SubmitGameCodeResponse submitGameCode(String taskId, String code) {
+    public SubmitGameCodeResponse submitGameCode(String taskId, String value) {
         Task task = getTask(taskId);
         var processDefinition = repositoryService.createProcessDefinitionQuery()
                 .processDefinitionId(task.getProcessDefinitionId())
@@ -75,7 +81,46 @@ public class TaskServiceApp {
         if (processDefinition == null || !"game".equalsIgnoreCase(processDefinition.getCategory())) {
             throw new ApiException("Codes are supported only for game processes");
         }
-        throw new ApiException("Game code validation requires process metadata and is temporarily unavailable");
+
+        List<String> requiredCodes = gameLevelCodeRepository
+                .findByProcessIdAndLevelKeyOrderByCreatedAtAsc(processDefinition.getKey(), task.getTaskDefinitionKey())
+                .stream()
+                .map(c -> c.getValue().trim())
+                .distinct()
+                .toList();
+
+        if (requiredCodes.isEmpty()) {
+            throw new ApiException("No codes configured for this level");
+        }
+
+        String normalizedValue = value.trim();
+        boolean isCorrect = requiredCodes.stream().anyMatch(required -> required.equalsIgnoreCase(normalizedValue));
+
+        gameCodeAttemptRepository.save(GameCodeAttempt.builder()
+                .taskId(taskId)
+                .processId(processDefinition.getKey())
+                .levelKey(task.getTaskDefinitionKey())
+                .value(value)
+                .correct(isCorrect)
+                .createdAt(Instant.now())
+                .build());
+
+        List<GameCodeAttempt> attempts = gameCodeAttemptRepository.findByTaskIdOrderByCreatedAtAsc(taskId);
+        Set<String> enteredCorrectCodes = attempts.stream()
+                .filter(GameCodeAttempt::isCorrect)
+                .map(a -> a.getValue().trim().toLowerCase())
+                .collect(Collectors.toCollection(HashSet::new));
+
+        boolean levelCompleted = requiredCodes.stream()
+                .map(c -> c.toLowerCase())
+                .allMatch(enteredCorrectCodes::contains);
+
+        if (levelCompleted) {
+            taskService.complete(taskId);
+        }
+
+        List<String> enteredCodes = attempts.stream().map(GameCodeAttempt::getValue).toList();
+        return new SubmitGameCodeResponse(levelCompleted, enteredCodes, requiredCodes);
     }
 
     public List<HistoricTaskInstance> adminTasks() {
@@ -84,18 +129,6 @@ public class TaskServiceApp {
 
     private Map<String, Object> variablesOrEmpty(CompleteTaskRequest req) {
         return req.variables() == null ? Map.of() : req.variables();
-    }
-
-    @SuppressWarnings("unchecked")
-    private Set<String> readEnteredCodes(String taskId, String variableName) {
-        Object raw = taskService.getVariable(taskId, variableName);
-        if (raw == null) {
-            return new java.util.HashSet<>();
-        }
-        if (raw instanceof Collection<?> collection) {
-            return collection.stream().map(String::valueOf).collect(Collectors.toSet());
-        }
-        return new java.util.HashSet<>();
     }
 
     private Set<UUID> resolveUserGroupIds(String groupTypeCode) {

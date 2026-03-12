@@ -20,6 +20,6 @@ public class GameCodeController {
     @PostMapping("/tasks/{taskId}/codes")
     public SubmitGameCodeResponse submitCode(@PathVariable String taskId,
                                              @Valid @RequestBody SubmitGameCodeRequest req) {
-        return taskService.submitGameCode(taskId, req.code());
+        return taskService.submitGameCode(taskId, req.value());
     }
 }
