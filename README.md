@@ -39,6 +39,7 @@ docker compose up --build
 - Продуктовые таблицы отдельны от таблиц Flowable.
 - Для user tasks в demo BPMN используется assignee `${assignee}`; при старте можно передать `assigneeGroupId` в теле запроса, тогда сервис автоматически запишет его в process variable `assignee`.
 - `GET /api/tasks/my` возвращает личные задачи пользователя и задачи групп, в которых он состоит. Поддерживается необязательный параметр `groupType` (код типа группы) для фильтрации групповых задач.
+- Для процессов с `category=game`: каждая `userTask` считается уровнем. Коды уровня задаются на уровне процесса через `PUT /api/processes/{id}/levels/{levelKey}/codes` как сущности с полями `value`, `description`, `difficultyValue`, `difficultyDescription` и одинаковы для всех инстансов. В `POST /api/tasks/{taskId}/complete` можно передавать поле `code`; задача завершится автоматически, когда введены все коды уровня. Также доступен отдельный endpoint ввода кода `POST /api/game/tasks/{taskId}/codes`.
 
 
 ## Backend (Gradle)

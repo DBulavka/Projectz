@@ -1,13 +1,21 @@
 package com.example.workflow.service;
 
+import com.example.workflow.dto.process.GameCodeDifficultyDto;
+import com.example.workflow.dto.process.GameLevelCodeItemDto;
+import com.example.workflow.dto.process.GameLevelCodeItemRequest;
+import com.example.workflow.dto.process.GameLevelCodesRequest;
 import com.example.workflow.dto.process.ProcessMetaRequest;
 import com.example.workflow.dto.process.ProcessVersionRequest;
 import com.example.workflow.entity.AuditLog;
+import com.example.workflow.entity.GameCodeDifficulty;
+import com.example.workflow.entity.GameLevelCode;
 import com.example.workflow.entity.ProcessDefinitionMeta;
 import com.example.workflow.entity.ProcessDefinitionVersion;
 import com.example.workflow.enums.VersionStatus;
 import com.example.workflow.exception.ApiException;
 import com.example.workflow.repository.AuditLogRepository;
+import com.example.workflow.repository.GameCodeDifficultyRepository;
+import com.example.workflow.repository.GameLevelCodeRepository;
 import com.example.workflow.repository.ProcessDefinitionMetaRepository;
 import com.example.workflow.repository.ProcessDefinitionVersionRepository;
 import com.example.workflow.repository.UserGroupRepository;
@@ -22,6 +30,7 @@ import org.springframework.stereotype.Service;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -36,6 +45,8 @@ public class ProcessService {
     private final SecurityUtils securityUtils;
     private final AuditService auditService;
     private final UserGroupRepository userGroupRepository;
+    private final GameLevelCodeRepository gameLevelCodeRepository;
+    private final GameCodeDifficultyRepository gameCodeDifficultyRepository;
 
     public List<ProcessDefinitionMeta> list() {
         if (securityUtils.isAdmin()) return metaRepository.findAll();
@@ -146,6 +157,98 @@ public class ProcessService {
     public List<AuditLog> processAudit(UUID processId) {
         accessibleMeta(processId);
         return auditLogRepository.findByEntityTypeAndEntityIdOrderByCreatedAtDesc("PROCESS", processId.toString());
+    }
+
+    public List<GameLevelCodeItemDto> getLevelCodes(UUID processId, String levelKey) {
+        accessibleMeta(processId);
+        return gameLevelCodeRepository.findByProcessDefinitionMetaIdAndLevelKeyOrderByCreatedAtAsc(processId, levelKey).stream()
+                .map(this::toGameLevelCodeItemDto)
+                .toList();
+    }
+
+    public List<GameLevelCodeItemDto> replaceLevelCodes(UUID processId, String levelKey, GameLevelCodesRequest req) {
+        manageableMeta(processId);
+
+        List<GameLevelCodeItemRequest> normalizedCodes = req.codes().stream()
+                .map(code -> new GameLevelCodeItemRequest(
+                        code.value().trim(),
+                        normalizeNullable(code.description()),
+                        code.difficultyValue().trim(),
+                        normalizeNullable(code.difficultyDescription())
+                ))
+                .filter(code -> !code.value().isEmpty() && !code.difficultyValue().isEmpty())
+                .collect(java.util.stream.Collectors.collectingAndThen(
+                        java.util.stream.Collectors.toMap(
+                                code -> code.value() + "::" + code.difficultyValue(),
+                                code -> code,
+                                (left, right) -> left,
+                                java.util.LinkedHashMap::new
+                        ),
+                        map -> new ArrayList<>(map.values())
+                ));
+
+        if (normalizedCodes.isEmpty()) {
+            throw new ApiException("At least one non-empty code with difficulty is required");
+        }
+
+        List<GameLevelCode> existing = gameLevelCodeRepository.findByProcessDefinitionMetaIdAndLevelKeyOrderByCreatedAtAsc(processId, levelKey);
+        gameLevelCodeRepository.deleteAll(existing);
+
+        Instant now = Instant.now();
+        List<GameLevelCode> toSave = normalizedCodes.stream()
+                .map(code -> {
+                    GameCodeDifficulty difficulty = findOrCreateDifficulty(code.difficultyValue(), code.difficultyDescription(), now);
+                    return GameLevelCode.builder()
+                            .processDefinitionMetaId(processId)
+                            .levelKey(levelKey)
+                            .value(code.value())
+                            .description(code.description())
+                            .difficultyId(difficulty.getId())
+                            .createdAt(now)
+                            .build();
+                })
+                .toList();
+
+        return gameLevelCodeRepository.saveAll(toSave).stream()
+                .map(this::toGameLevelCodeItemDto)
+                .toList();
+    }
+
+    private GameCodeDifficulty findOrCreateDifficulty(String value, String description, Instant now) {
+        return gameCodeDifficultyRepository.findByValue(value)
+                .map(existing -> {
+                    String normalizedDescription = normalizeNullable(description);
+                    if (normalizedDescription != null && !normalizedDescription.equals(existing.getDescription())) {
+                        existing.setDescription(normalizedDescription);
+                        existing.setUpdatedAt(now);
+                        return gameCodeDifficultyRepository.save(existing);
+                    }
+                    return existing;
+                })
+                .orElseGet(() -> gameCodeDifficultyRepository.save(GameCodeDifficulty.builder()
+                        .value(value)
+                        .description(normalizeNullable(description))
+                        .createdAt(now)
+                        .updatedAt(now)
+                        .build()));
+    }
+
+    private GameLevelCodeItemDto toGameLevelCodeItemDto(GameLevelCode code) {
+        GameCodeDifficulty difficulty = gameCodeDifficultyRepository.findById(code.getDifficultyId())
+                .orElseThrow(() -> new ApiException("Code difficulty not found"));
+        return new GameLevelCodeItemDto(
+                code.getValue(),
+                code.getDescription(),
+                new GameCodeDifficultyDto(difficulty.getValue(), difficulty.getDescription())
+        );
+    }
+
+    private String normalizeNullable(String value) {
+        if (value == null) {
+            return null;
+        }
+        String normalized = value.trim();
+        return normalized.isEmpty() ? null : normalized;
     }
 
     private ProcessDefinitionMeta accessibleMeta(UUID id) {

@@ -1,6 +1,8 @@
 package com.example.workflow.controller;
 
 import com.example.workflow.dto.audit.AuditLogDto;
+import com.example.workflow.dto.process.GameLevelCodesDto;
+import com.example.workflow.dto.process.GameLevelCodesRequest;
 import com.example.workflow.dto.process.ProcessMetaDto;
 import com.example.workflow.dto.process.ProcessMetaRequest;
 import com.example.workflow.dto.process.ProcessVersionDto;
@@ -74,5 +76,17 @@ public class ProcessController {
     @GetMapping("/{id}/audit")
     public List<AuditLogDto> audit(@PathVariable UUID id) {
         return processMapper.toAuditDtoList(processService.processAudit(id));
+    }
+
+    @GetMapping("/{id}/levels/{levelKey}/codes")
+    public GameLevelCodesDto getLevelCodes(@PathVariable UUID id, @PathVariable String levelKey) {
+        return new GameLevelCodesDto(levelKey, processService.getLevelCodes(id, levelKey));
+    }
+
+    @PutMapping("/{id}/levels/{levelKey}/codes")
+    public GameLevelCodesDto replaceLevelCodes(@PathVariable UUID id,
+                                               @PathVariable String levelKey,
+                                               @Valid @RequestBody GameLevelCodesRequest req) {
+        return new GameLevelCodesDto(levelKey, processService.replaceLevelCodes(id, levelKey, req));
     }
 }
