@@ -46,7 +46,7 @@ public class TaskServiceApp {
         }
 
         for (UUID groupId : resolveUserGroupIds(groupTypeCode)) {
-            for (Task task : taskService.createTaskQuery().taskAssignee(groupId.toString()).list()) {
+            for (Task task : taskService.createTaskQuery().processInstanceBusinessKeyLikeIgnoreCase(groupId.toString()).list()) {
                 tasksById.put(task.getId(), task);
             }
         }
