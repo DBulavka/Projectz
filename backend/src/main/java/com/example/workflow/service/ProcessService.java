@@ -9,166 +9,126 @@ import com.example.workflow.dto.process.ProcessVersionRequest;
 import com.example.workflow.entity.AuditLog;
 import com.example.workflow.entity.GameCodeDifficulty;
 import com.example.workflow.entity.GameLevelCode;
-import com.example.workflow.entity.ProcessDefinitionMeta;
-import com.example.workflow.entity.ProcessDefinitionVersion;
-import com.example.workflow.enums.VersionStatus;
 import com.example.workflow.exception.ApiException;
 import com.example.workflow.repository.AuditLogRepository;
 import com.example.workflow.repository.GameCodeDifficultyRepository;
 import com.example.workflow.repository.GameLevelCodeRepository;
-import com.example.workflow.repository.ProcessDefinitionMetaRepository;
-import com.example.workflow.repository.ProcessDefinitionVersionRepository;
-import com.example.workflow.repository.UserGroupRepository;
-import com.example.workflow.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
-import org.flowable.bpmn.converter.BpmnXMLConverter;
-import org.flowable.bpmn.model.BpmnModel;
 import org.flowable.engine.RepositoryService;
 import org.flowable.engine.repository.Deployment;
+import org.flowable.engine.repository.ProcessDefinition;
 import org.springframework.stereotype.Service;
 
-import java.io.ByteArrayInputStream;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class ProcessService {
-    private final ProcessDefinitionMetaRepository metaRepository;
-    private final ProcessDefinitionVersionRepository versionRepository;
     private final AuditLogRepository auditLogRepository;
     private final RepositoryService repositoryService;
-    private final SecurityUtils securityUtils;
     private final AuditService auditService;
-    private final UserGroupRepository userGroupRepository;
     private final GameLevelCodeRepository gameLevelCodeRepository;
     private final GameCodeDifficultyRepository gameCodeDifficultyRepository;
 
-    public List<ProcessDefinitionMeta> list() {
-        if (securityUtils.isAdmin()) return metaRepository.findAll();
-        Set<UUID> groupIds = securityUtils.currentUserGroupIds();
-        if (groupIds.isEmpty()) return List.of();
-        return metaRepository.findByOwnerGroupIdIn(groupIds);
+    public List<ProcessDefinition> list() {
+        return repositoryService.createProcessDefinitionQuery().latestVersion().list();
     }
 
-    public ProcessDefinitionMeta create(ProcessMetaRequest req) {
-        if (req.ownerGroupId() == null) throw new ApiException("ownerGroupId is required");
-        if (!userGroupRepository.existsById(req.ownerGroupId())) throw new ApiException("Group not found");
-        if (!securityUtils.canManageGroup(req.ownerGroupId())) throw new ApiException("Forbidden");
-
-        Instant now = Instant.now();
-        ProcessDefinitionMeta meta = metaRepository.save(ProcessDefinitionMeta.builder()
-                .ownerGroupId(req.ownerGroupId())
-                .key(req.key())
-                .name(req.name())
-                .description(req.description())
-                .category(req.category())
-                .createdAt(now)
-                .updatedAt(now)
-                .build());
-        auditService.log(securityUtils.currentUserId(), "PROCESS", meta.getId().toString(), "CREATE", req);
-        return meta;
-    }
-
-    public ProcessDefinitionMeta get(UUID id) { return accessibleMeta(id); }
-
-    public ProcessDefinitionMeta update(UUID id, ProcessMetaRequest req) {
-        ProcessDefinitionMeta meta = manageableMeta(id);
-        meta.setName(req.name());
-        meta.setDescription(req.description());
-        meta.setCategory(req.category());
-        meta.setUpdatedAt(Instant.now());
-        auditService.log(securityUtils.currentUserId(), "PROCESS", meta.getId().toString(), "UPDATE", req);
-        return metaRepository.save(meta);
-    }
-
-    public void delete(UUID id) {
-        manageableMeta(id);
-        metaRepository.deleteById(id);
-        auditService.log(securityUtils.currentUserId(), "PROCESS", id.toString(), "DELETE", null);
-    }
-
-    public List<ProcessDefinitionVersion> listVersions(UUID processId) {
-        accessibleMeta(processId);
-        return versionRepository.findByProcessDefinitionMetaIdOrderByVersionNumberDesc(processId);
-    }
-
-    public ProcessDefinitionVersion createVersion(UUID processId, ProcessVersionRequest req) {
-        manageableMeta(processId);
-        int count = versionRepository.countByProcessDefinitionMetaId(processId);
-        ProcessDefinitionVersion v = versionRepository.save(ProcessDefinitionVersion.builder()
-                .processDefinitionMetaId(processId)
-                .versionNumber(count + 1)
-                .bpmnXml(req.bpmnXml())
-                .status(VersionStatus.DRAFT)
-                .createdAt(Instant.now())
-                .build());
-        auditService.log(securityUtils.currentUserId(), "VERSION", v.getId().toString(), "CREATE", null);
-        return v;
-    }
-
-    public ProcessDefinitionVersion getVersion(UUID processId, UUID versionId) {
-        accessibleMeta(processId);
-        var v = versionRepository.findById(versionId).orElseThrow(() -> new ApiException("Version not found"));
-        if (!v.getProcessDefinitionMetaId().equals(processId)) throw new ApiException("Version mismatch");
-        return v;
-    }
-
-    public ProcessDefinitionVersion updateVersionBpmn(UUID processId, UUID versionId, ProcessVersionRequest req) {
-        manageableMeta(processId);
-        ProcessDefinitionVersion v = getVersion(processId, versionId);
-        if (v.getStatus() == VersionStatus.PUBLISHED) throw new ApiException("Published version cannot be edited");
-        v.setBpmnXml(req.bpmnXml());
-        return versionRepository.save(v);
-    }
-
-    public ProcessDefinitionVersion publish(UUID processId, UUID versionId) {
-        manageableMeta(processId);
-        ProcessDefinitionVersion v = getVersion(processId, versionId);
-        if (v.getStatus() != VersionStatus.DRAFT) throw new ApiException("Only draft can be published");
-
-        try {
-            BpmnXMLConverter converter = new BpmnXMLConverter();
-            BpmnModel model = converter.convertToBpmnModel(() -> new ByteArrayInputStream(v.getBpmnXml().getBytes(StandardCharsets.UTF_8)), false, false);
-            if (model.getMainProcess() == null) throw new ApiException("Invalid BPMN: no process");
-        } catch (Exception e) {
-            throw new ApiException("Invalid BPMN XML: " + e.getMessage());
-        }
-
+    public ProcessDefinition create(ProcessMetaRequest req) {
+        String key = req.key();
+        String name = req.name();
+        String bpmn = """
+                <?xml version=\"1.0\" encoding=\"UTF-8\"?>
+                <definitions xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" targetNamespace=\"Examples\">
+                  <process id=\"%s\" name=\"%s\" isExecutable=\"true\">
+                    <startEvent id=\"start\"/>
+                    <endEvent id=\"end\"/>
+                    <sequenceFlow id=\"flow1\" sourceRef=\"start\" targetRef=\"end\"/>
+                  </process>
+                </definitions>
+                """.formatted(key, name);
         Deployment deployment = repositoryService.createDeployment()
-                .name("proc-" + processId + "-v" + versionId)
-                .addString("process.bpmn20.xml", v.getBpmnXml())
+                .name("process-" + key)
+                .category(req.category())
+                .addString(key + ".bpmn20.xml", bpmn)
                 .deploy();
-
-        var def = repositoryService.createProcessDefinitionQuery().deploymentId(deployment.getId()).singleResult();
-        v.setFlowableDeploymentId(deployment.getId());
-        v.setFlowableProcessDefinitionId(def.getId());
-        v.setFlowableProcessDefinitionKey(def.getKey());
-        v.setStatus(VersionStatus.PUBLISHED);
-        v.setPublishedAt(Instant.now());
-        auditService.log(securityUtils.currentUserId(), "VERSION", v.getId().toString(), "PUBLISH", null);
-        return versionRepository.save(v);
+        ProcessDefinition created = repositoryService.createProcessDefinitionQuery().deploymentId(deployment.getId()).singleResult();
+        auditService.log(null, "PROCESS", created.getId(), "CREATE", req);
+        return created;
     }
 
-    public List<AuditLog> processAudit(UUID processId) {
-        accessibleMeta(processId);
-        return auditLogRepository.findByEntityTypeAndEntityIdOrderByCreatedAtDesc("PROCESS", processId.toString());
+    public ProcessDefinition get(String id) {
+        ProcessDefinition definition = repositoryService.createProcessDefinitionQuery().processDefinitionId(id).singleResult();
+        if (definition == null) {
+            throw new ApiException("Process not found");
+        }
+        return definition;
     }
 
-    public List<GameLevelCodeItemDto> getLevelCodes(UUID processId, String levelKey) {
-        accessibleMeta(processId);
-        return gameLevelCodeRepository.findByProcessDefinitionMetaIdAndLevelKeyOrderByCreatedAtAsc(processId, levelKey).stream()
+    public ProcessDefinition update(String id, ProcessMetaRequest req) {
+        throw new ApiException("Update is not supported for Flowable process definitions");
+    }
+
+    public void delete(String id) {
+        ProcessDefinition definition = get(id);
+        repositoryService.deleteDeployment(definition.getDeploymentId(), true);
+    }
+
+    public List<ProcessDefinition> listVersions(String processId) {
+        ProcessDefinition process = get(processId);
+        return repositoryService.createProcessDefinitionQuery()
+                .processDefinitionKey(process.getKey())
+                .orderByProcessDefinitionVersion().desc()
+                .list();
+    }
+
+    public ProcessDefinition createVersion(String processId, ProcessVersionRequest req) {
+        ProcessDefinition process = get(processId);
+        Deployment deployment = repositoryService.createDeployment()
+                .name("process-" + process.getKey() + "-v-next")
+                .addString(process.getKey() + ".bpmn20.xml", req.bpmnXml())
+                .deploy();
+        return repositoryService.createProcessDefinitionQuery().deploymentId(deployment.getId()).singleResult();
+    }
+
+    public ProcessDefinition getVersion(String processId, String versionId) {
+        ProcessDefinition process = get(processId);
+        ProcessDefinition version = repositoryService.createProcessDefinitionQuery().processDefinitionId(versionId).singleResult();
+        if (version == null || !process.getKey().equals(version.getKey())) {
+            throw new ApiException("Version not found");
+        }
+        return version;
+    }
+
+    public ProcessDefinition updateVersionBpmn(String processId, String versionId, ProcessVersionRequest req) {
+        ProcessDefinition version = getVersion(processId, versionId);
+        Deployment deployment = repositoryService.createDeployment()
+                .name("process-" + version.getKey() + "-v" + version.getVersion())
+                .addString(version.getKey() + ".bpmn20.xml", req.bpmnXml())
+                .deploy();
+        return repositoryService.createProcessDefinitionQuery().deploymentId(deployment.getId()).singleResult();
+    }
+
+    public ProcessDefinition publish(String processId, String versionId) {
+        return getVersion(processId, versionId);
+    }
+
+    public List<AuditLog> processAudit(String processId) {
+        return auditLogRepository.findByEntityTypeAndEntityIdOrderByCreatedAtDesc("PROCESS", processId);
+    }
+
+    public List<GameLevelCodeItemDto> getLevelCodes(String processId, String levelKey) {
+        UUID processUuid = UUID.nameUUIDFromBytes(processId.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        return gameLevelCodeRepository.findByProcessDefinitionMetaIdAndLevelKeyOrderByCreatedAtAsc(processUuid, levelKey).stream()
                 .map(this::toGameLevelCodeItemDto)
                 .toList();
     }
 
-    public List<GameLevelCodeItemDto> replaceLevelCodes(UUID processId, String levelKey, GameLevelCodesRequest req) {
-        manageableMeta(processId);
-
+    public List<GameLevelCodeItemDto> replaceLevelCodes(String processId, String levelKey, GameLevelCodesRequest req) {
+        UUID processUuid = UUID.nameUUIDFromBytes(processId.getBytes(java.nio.charset.StandardCharsets.UTF_8));
         List<GameLevelCodeItemRequest> normalizedCodes = req.codes().stream()
                 .map(code -> new GameLevelCodeItemRequest(
                         code.value().trim(),
@@ -191,7 +151,7 @@ public class ProcessService {
             throw new ApiException("At least one non-empty code with difficulty is required");
         }
 
-        List<GameLevelCode> existing = gameLevelCodeRepository.findByProcessDefinitionMetaIdAndLevelKeyOrderByCreatedAtAsc(processId, levelKey);
+        List<GameLevelCode> existing = gameLevelCodeRepository.findByProcessDefinitionMetaIdAndLevelKeyOrderByCreatedAtAsc(processUuid, levelKey);
         gameLevelCodeRepository.deleteAll(existing);
 
         Instant now = Instant.now();
@@ -199,7 +159,7 @@ public class ProcessService {
                 .map(code -> {
                     GameCodeDifficulty difficulty = findOrCreateDifficulty(code.difficultyValue(), code.difficultyDescription(), now);
                     return GameLevelCode.builder()
-                            .processDefinitionMetaId(processId)
+                            .processDefinitionMetaId(processUuid)
                             .levelKey(levelKey)
                             .value(code.value())
                             .description(code.description())
@@ -249,17 +209,5 @@ public class ProcessService {
         }
         String normalized = value.trim();
         return normalized.isEmpty() ? null : normalized;
-    }
-
-    private ProcessDefinitionMeta accessibleMeta(UUID id) {
-        ProcessDefinitionMeta meta = metaRepository.findById(id).orElseThrow(() -> new ApiException("Process not found"));
-        if (!securityUtils.hasGroupAccess(meta.getOwnerGroupId())) throw new ApiException("Forbidden");
-        return meta;
-    }
-
-    private ProcessDefinitionMeta manageableMeta(UUID id) {
-        ProcessDefinitionMeta meta = metaRepository.findById(id).orElseThrow(() -> new ApiException("Process not found"));
-        if (!securityUtils.canManageGroup(meta.getOwnerGroupId())) throw new ApiException("Forbidden");
-        return meta;
     }
 }

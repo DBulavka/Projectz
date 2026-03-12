@@ -1,10 +1,15 @@
 package com.example.workflow.config;
 
-import com.example.workflow.entity.*;
+import com.example.workflow.entity.GroupType;
+import com.example.workflow.entity.User;
+import com.example.workflow.entity.UserGroup;
+import com.example.workflow.entity.UserGroupMembership;
 import com.example.workflow.enums.GroupRole;
 import com.example.workflow.enums.Role;
-import com.example.workflow.enums.VersionStatus;
-import com.example.workflow.repository.*;
+import com.example.workflow.repository.GroupTypeRepository;
+import com.example.workflow.repository.UserGroupMembershipRepository;
+import com.example.workflow.repository.UserGroupRepository;
+import com.example.workflow.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.flowable.engine.RepositoryService;
 import org.springframework.boot.CommandLineRunner;
@@ -21,8 +26,6 @@ public class SeedDataConfig {
     @Bean
     CommandLineRunner seed(UserRepository userRepository,
                            PasswordEncoder encoder,
-                           ProcessDefinitionMetaRepository metaRepository,
-                           ProcessDefinitionVersionRepository versionRepository,
                            GroupTypeRepository groupTypeRepository,
                            UserGroupRepository userGroupRepository,
                            UserGroupMembershipRepository membershipRepository,
@@ -77,17 +80,7 @@ public class SeedDataConfig {
                             .createdAt(Instant.now())
                             .build()));
 
-            if (metaRepository.findAll().stream().noneMatch(m -> m.getKey().equals("home-chores"))) {
-                ProcessDefinitionMeta meta = metaRepository.save(ProcessDefinitionMeta.builder()
-                        .ownerGroupId(demoGroup.getId())
-                        .key("home-chores")
-                        .name("Домашние дела")
-                        .description("Demo BPMN")
-                        .category("demo")
-                        .createdAt(Instant.now())
-                        .updatedAt(Instant.now())
-                        .build());
-
+            if (repositoryService.createProcessDefinitionQuery().processDefinitionKey("homeChores").count() == 0) {
                 String xml = """
                         <?xml version=\"1.0\" encoding=\"UTF-8\"?>
                         <definitions xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:flowable=\"http://flowable.org/bpmn\" targetNamespace=\"Examples\"> 
@@ -114,20 +107,7 @@ public class SeedDataConfig {
                           </process>
                         </definitions>
                         """;
-
-                var deployment = repositoryService.createDeployment().name("home-chores-seed").addString("home-chores.bpmn20.xml", xml).deploy();
-                var def = repositoryService.createProcessDefinitionQuery().deploymentId(deployment.getId()).singleResult();
-                versionRepository.save(ProcessDefinitionVersion.builder()
-                        .processDefinitionMetaId(meta.getId())
-                        .versionNumber(1)
-                        .bpmnXml(xml)
-                        .flowableDeploymentId(deployment.getId())
-                        .flowableProcessDefinitionId(def.getId())
-                        .flowableProcessDefinitionKey(def.getKey())
-                        .status(VersionStatus.PUBLISHED)
-                        .createdAt(Instant.now())
-                        .publishedAt(Instant.now())
-                        .build());
+                repositoryService.createDeployment().name("home-chores-seed").addString("home-chores.bpmn20.xml", xml).deploy();
             }
         };
     }

@@ -4,21 +4,29 @@ import com.example.workflow.dto.audit.AuditLogDto;
 import com.example.workflow.dto.process.ProcessMetaDto;
 import com.example.workflow.dto.process.ProcessVersionDto;
 import com.example.workflow.entity.AuditLog;
-import com.example.workflow.entity.ProcessDefinitionMeta;
-import com.example.workflow.entity.ProcessDefinitionVersion;
+import org.flowable.engine.repository.ProcessDefinition;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface ProcessMapper {
-    ProcessMetaDto toDto(ProcessDefinitionMeta entity);
+    @Mapping(target = "ownerGroupId", ignore = true)
+    @Mapping(target = "description", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    ProcessMetaDto toDto(ProcessDefinition entity);
 
-    List<ProcessMetaDto> toMetaDtoList(List<ProcessDefinitionMeta> entities);
+    List<ProcessMetaDto> toMetaDtoList(List<ProcessDefinition> entities);
 
-    ProcessVersionDto toDto(ProcessDefinitionVersion entity);
+    @Mapping(target = "processDefinitionMetaId", source = "key")
+    @Mapping(target = "status", constant = "PUBLISHED")
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "publishedAt", ignore = true)
+    ProcessVersionDto toVersionDto(ProcessDefinition entity);
 
-    List<ProcessVersionDto> toVersionDtoList(List<ProcessDefinitionVersion> entities);
+    List<ProcessVersionDto> toVersionDtoList(List<ProcessDefinition> entities);
 
     AuditLogDto toDto(AuditLog entity);
 
