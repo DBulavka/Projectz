@@ -3,11 +3,14 @@ package com.example.workflow.service;
 import com.example.workflow.dto.process.ProcessMetaRequest;
 import com.example.workflow.dto.process.ProcessVersionRequest;
 import com.example.workflow.entity.AuditLog;
+import com.example.workflow.dto.process.GameLevelCodesRequest;
+import com.example.workflow.entity.GameLevelCode;
 import com.example.workflow.entity.ProcessDefinitionMeta;
 import com.example.workflow.entity.ProcessDefinitionVersion;
 import com.example.workflow.enums.VersionStatus;
 import com.example.workflow.exception.ApiException;
 import com.example.workflow.repository.AuditLogRepository;
+import com.example.workflow.repository.GameLevelCodeRepository;
 import com.example.workflow.repository.ProcessDefinitionMetaRepository;
 import com.example.workflow.repository.ProcessDefinitionVersionRepository;
 import com.example.workflow.repository.UserGroupRepository;
@@ -22,6 +25,8 @@ import org.springframework.stereotype.Service;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -36,6 +41,7 @@ public class ProcessService {
     private final SecurityUtils securityUtils;
     private final AuditService auditService;
     private final UserGroupRepository userGroupRepository;
+    private final GameLevelCodeRepository gameLevelCodeRepository;
 
     public List<ProcessDefinitionMeta> list() {
         if (securityUtils.isAdmin()) return metaRepository.findAll();
@@ -146,6 +152,45 @@ public class ProcessService {
     public List<AuditLog> processAudit(UUID processId) {
         accessibleMeta(processId);
         return auditLogRepository.findByEntityTypeAndEntityIdOrderByCreatedAtDesc("PROCESS", processId.toString());
+    }
+
+    public List<String> getLevelCodes(UUID processId, String levelKey) {
+        accessibleMeta(processId);
+        return gameLevelCodeRepository.findByProcessDefinitionMetaIdAndLevelKey(processId, levelKey).stream()
+                .map(GameLevelCode::getCode)
+                .toList();
+    }
+
+    public List<String> replaceLevelCodes(UUID processId, String levelKey, GameLevelCodesRequest req) {
+        manageableMeta(processId);
+
+        List<String> normalizedCodes = req.codes().stream()
+                .map(String::trim)
+                .filter(code -> !code.isEmpty())
+                .collect(java.util.stream.Collectors.collectingAndThen(
+                        java.util.stream.Collectors.toCollection(LinkedHashSet::new),
+                        ArrayList::new
+                ));
+
+        if (normalizedCodes.isEmpty()) {
+            throw new ApiException("At least one non-empty code is required");
+        }
+
+        List<GameLevelCode> existing = gameLevelCodeRepository.findByProcessDefinitionMetaIdAndLevelKey(processId, levelKey);
+        gameLevelCodeRepository.deleteAll(existing);
+
+        List<GameLevelCode> toSave = normalizedCodes.stream()
+                .map(code -> GameLevelCode.builder()
+                        .processDefinitionMetaId(processId)
+                        .levelKey(levelKey)
+                        .code(code)
+                        .createdAt(Instant.now())
+                        .build())
+                .toList();
+
+        return gameLevelCodeRepository.saveAll(toSave).stream()
+                .map(GameLevelCode::getCode)
+                .toList();
     }
 
     private ProcessDefinitionMeta accessibleMeta(UUID id) {

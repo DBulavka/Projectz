@@ -1,12 +1,16 @@
 package com.example.workflow.service;
 
 import com.example.workflow.dto.task.CompleteTaskRequest;
+import com.example.workflow.entity.GameLevelCode;
 import com.example.workflow.entity.GroupType;
+import com.example.workflow.entity.ProcessDefinitionMeta;
 import com.example.workflow.entity.ProcessInstanceMeta;
 import com.example.workflow.entity.UserGroup;
 import com.example.workflow.entity.UserGroupMembership;
 import com.example.workflow.exception.ApiException;
+import com.example.workflow.repository.GameLevelCodeRepository;
 import com.example.workflow.repository.GroupTypeRepository;
+import com.example.workflow.repository.ProcessDefinitionMetaRepository;
 import com.example.workflow.repository.ProcessInstanceMetaRepository;
 import com.example.workflow.repository.UserGroupMembershipRepository;
 import com.example.workflow.repository.UserGroupRepository;
@@ -19,6 +23,7 @@ import org.flowable.task.api.history.HistoricTaskInstance;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -37,6 +42,10 @@ public class TaskServiceApp {
     private final UserGroupMembershipRepository membershipRepository;
     private final UserGroupRepository userGroupRepository;
     private final GroupTypeRepository groupTypeRepository;
+    private final ProcessDefinitionMetaRepository processDefinitionMetaRepository;
+    private final GameLevelCodeRepository gameLevelCodeRepository;
+
+    private static final String GAME_CATEGORY = "game";
 
     public List<Task> myTasks(String groupTypeCode) {
         Map<String, Task> tasksById = new LinkedHashMap<>();
@@ -64,7 +73,47 @@ public class TaskServiceApp {
 
     public void complete(String taskId, CompleteTaskRequest req) {
         Task task = getTask(taskId);
-        taskService.complete(task.getId(), req.variables());
+        ProcessInstanceMeta instanceMeta = instanceRepository.findByFlowableProcessInstanceId(task.getProcessInstanceId())
+                .orElseThrow(() -> new ApiException("Task instance mapping not found"));
+        ProcessDefinitionMeta processMeta = processDefinitionMetaRepository.findById(instanceMeta.getProcessDefinitionMetaId())
+                .orElseThrow(() -> new ApiException("Process not found"));
+
+        if (!GAME_CATEGORY.equalsIgnoreCase(processMeta.getCategory())) {
+            taskService.complete(task.getId(), variablesOrEmpty(req));
+            return;
+        }
+
+        String levelKey = task.getTaskDefinitionKey();
+        if (levelKey == null || levelKey.isBlank()) {
+            throw new ApiException("Game level key not found");
+        }
+
+        List<GameLevelCode> levelCodes = gameLevelCodeRepository.findByProcessDefinitionMetaIdAndLevelKey(processMeta.getId(), levelKey);
+        if (levelCodes.isEmpty()) {
+            throw new ApiException("No codes configured for this level");
+        }
+
+        String inputCode = req.code();
+        if (inputCode == null || inputCode.isBlank()) {
+            throw new ApiException("Code is required for game level completion");
+        }
+
+        Set<String> requiredCodes = levelCodes.stream()
+                .map(GameLevelCode::getCode)
+                .collect(Collectors.toSet());
+
+        if (!requiredCodes.contains(inputCode)) {
+            throw new ApiException("Invalid level code");
+        }
+
+        String enteredCodesVariable = "gameLevelEnteredCodes_" + levelKey;
+        Set<String> enteredCodes = readEnteredCodes(task.getId(), enteredCodesVariable);
+        enteredCodes.add(inputCode);
+        taskService.setVariable(task.getId(), enteredCodesVariable, new ArrayList<>(enteredCodes));
+
+        if (enteredCodes.containsAll(requiredCodes)) {
+            taskService.complete(task.getId(), variablesOrEmpty(req));
+        }
     }
 
     private void checkTaskAccess(Task task) {
@@ -75,6 +124,24 @@ public class TaskServiceApp {
 
     public List<HistoricTaskInstance> adminTasks() {
         return historyService.createHistoricTaskInstanceQuery().orderByTaskCreateTime().desc().list();
+    }
+
+
+
+    private Map<String, Object> variablesOrEmpty(CompleteTaskRequest req) {
+        return req.variables() == null ? Map.of() : req.variables();
+    }
+
+    @SuppressWarnings("unchecked")
+    private Set<String> readEnteredCodes(String taskId, String variableName) {
+        Object raw = taskService.getVariable(taskId, variableName);
+        if (raw == null) {
+            return new java.util.HashSet<>();
+        }
+        if (raw instanceof Collection<?> collection) {
+            return collection.stream().map(String::valueOf).collect(Collectors.toSet());
+        }
+        return new java.util.HashSet<>();
     }
 
     private Set<UUID> resolveUserGroupIds(String groupTypeCode) {
