@@ -11,9 +11,9 @@ spring:
     properties:
       hibernate:
         format_sql: true
-  flyway:
+  liquibase:
     enabled: true
-    locations: classpath:db/migration
+    change-log: classpath:db/changelog/db.changelog-master.sql
 flowable:
   database-schema-update: true
   async-executor-activate: false
