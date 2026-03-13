@@ -78,12 +78,12 @@ public class TaskServiceApp {
         var processDefinition = repositoryService.createProcessDefinitionQuery()
                 .processDefinitionId(task.getProcessDefinitionId())
                 .singleResult();
-        if (processDefinition == null || !"game".equalsIgnoreCase(processDefinition.getCategory())) {
-            throw new ApiException("Codes are supported only for game processes");
-        }
+//        if (processDefinition == null || !"game".equalsIgnoreCase(processDefinition.getCategory())) {
+//            throw new ApiException("Codes are supported only for game processes");
+//        }
 
         List<String> requiredCodes = gameLevelCodeRepository
-                .findByProcessIdAndLevelKeyOrderByCreatedAtAsc(processDefinition.getKey(), task.getTaskDefinitionKey())
+                .findByProcessIdAndLevelKeyOrderByCreatedAtAsc(processDefinition.getId(), task.getTaskDefinitionKey())
                 .stream()
                 .map(c -> c.getValue().trim())
                 .distinct()
