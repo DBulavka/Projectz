@@ -2,6 +2,9 @@ package com.example.workflow.service;
 
 import com.example.workflow.dto.task.CompleteTaskRequest;
 import com.example.workflow.dto.task.SubmitGameCodeResponse;
+import com.example.workflow.dto.task.TaskDto;
+import com.example.workflow.dto.task.TaskGameCodeDto;
+import com.example.workflow.dto.task.TaskGameProgressDto;
 import com.example.workflow.entity.GameCodeAttempt;
 import com.example.workflow.entity.GroupType;
 import com.example.workflow.entity.UserGroup;
@@ -62,10 +65,20 @@ public class TaskServiceApp {
         return result;
     }
 
+
+    public List<TaskDto> myTaskDtos(String groupTypeCode) {
+        return myTasks(groupTypeCode).stream()
+                .map(this::toTaskDto)
+                .toList();
+    }
     public Task getTask(String taskId) {
         Task task = taskService.createTaskQuery().taskId(taskId).singleResult();
         if (task == null) throw new ApiException("Task not found");
         return task;
+    }
+
+    public TaskDto getTaskDto(String taskId) {
+        return toTaskDto(getTask(taskId));
     }
 
     public void complete(String taskId, CompleteTaskRequest req) {
@@ -86,8 +99,16 @@ public class TaskServiceApp {
                 .findByProcessIdAndLevelKeyOrderByCreatedAtAsc(processDefinition.getId(), task.getTaskDefinitionKey())
                 .stream()
                 .map(c -> c.getValue().trim())
-                .distinct()
-                .toList();
+                .filter(code -> !code.isEmpty())
+                .collect(Collectors.collectingAndThen(
+                        Collectors.toMap(
+                                code -> code.toLowerCase(),
+                                code -> code,
+                                (left, right) -> left,
+                                LinkedHashMap::new
+                        ),
+                        map -> new ArrayList<>(map.values())
+                ));
 
         if (requiredCodes.isEmpty()) {
             throw new ApiException("No codes configured for this level");
@@ -127,6 +148,61 @@ public class TaskServiceApp {
         return historyService.createHistoricTaskInstanceQuery().orderByTaskCreateTime().desc().list();
     }
 
+
+    private TaskDto toTaskDto(Task task) {
+        return new TaskDto(
+                task.getId(),
+                task.getName(),
+                task.getAssignee(),
+                task.getProcessInstanceId(),
+                task.getCreateTime() == null ? null : task.getCreateTime().toInstant(),
+                task.getDueDate() == null ? null : task.getDueDate().toInstant(),
+                resolveGameProgress(task)
+        );
+    }
+
+    private TaskGameProgressDto resolveGameProgress(Task task) {
+        var processDefinition = repositoryService.createProcessDefinitionQuery()
+                .processDefinitionId(task.getProcessDefinitionId())
+                .singleResult();
+        if (processDefinition == null) {
+            return null;
+        }
+
+        List<String> requiredCodes = gameLevelCodeRepository
+                .findByProcessIdAndLevelKeyOrderByCreatedAtAsc(processDefinition.getId(), task.getTaskDefinitionKey())
+                .stream()
+                .map(c -> c.getValue().trim())
+                .filter(code -> !code.isEmpty())
+                .collect(Collectors.collectingAndThen(
+                        Collectors.toMap(
+                                code -> code.toLowerCase(),
+                                code -> code,
+                                (left, right) -> left,
+                                LinkedHashMap::new
+                        ),
+                        map -> new ArrayList<>(map.values())
+                ));
+
+        if (requiredCodes.isEmpty()) {
+            return null;
+        }
+
+        Set<String> enteredCorrectCodes = gameCodeAttemptRepository.findByTaskIdOrderByCreatedAtAsc(task.getId()).stream()
+                .filter(GameCodeAttempt::isCorrect)
+                .map(attempt -> attempt.getValue().trim().toLowerCase())
+                .collect(Collectors.toSet());
+
+        List<TaskGameCodeDto> codes = requiredCodes.stream()
+                .map(code -> new TaskGameCodeDto(code, enteredCorrectCodes.contains(code.toLowerCase())))
+                .toList();
+
+        int enteredCorrectCodesCount = (int) codes.stream()
+                .filter(TaskGameCodeDto::entered)
+                .count();
+
+        return new TaskGameProgressDto(requiredCodes.size(), enteredCorrectCodesCount, codes);
+    }
     private Map<String, Object> variablesOrEmpty(CompleteTaskRequest req) {
         return req.variables() == null ? Map.of() : req.variables();
     }

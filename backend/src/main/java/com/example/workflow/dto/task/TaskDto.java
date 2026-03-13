@@ -8,5 +8,6 @@ public record TaskDto(
         String assignee,
         String processInstanceId,
         Instant createTime,
-        Instant dueDate
+        Instant dueDate,
+        TaskGameProgressDto gameProgress
 ) {}
