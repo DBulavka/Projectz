@@ -6,3 +6,4 @@ frontend/package-lock.json
 backend/target
 backend/.gradle
 backend/build
+backend/**/application-*.y*ml
