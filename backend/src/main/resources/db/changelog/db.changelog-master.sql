@@ -49,16 +49,6 @@ CREATE TABLE IF NOT EXISTS audit_log (
     created_at TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS game_level_code (
-    id UUID PRIMARY KEY,
-    process_id VARCHAR(255) NOT NULL,
-    level_key VARCHAR(255) NOT NULL,
-    code VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uq_game_level_code_value
-    ON game_level_code(process_id, level_key, code);
 
 CREATE TABLE IF NOT EXISTS game_code_difficulty (
     id UUID PRIMARY KEY,
@@ -68,35 +58,20 @@ CREATE TABLE IF NOT EXISTS game_code_difficulty (
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
-ALTER TABLE game_level_code
-    ADD COLUMN IF NOT EXISTS value VARCHAR(255),
-    ADD COLUMN IF NOT EXISTS description TEXT,
-    ADD COLUMN IF NOT EXISTS difficulty_id UUID;
+CREATE TABLE IF NOT EXISTS game_level_code (
+    id UUID PRIMARY KEY,
+    process_id VARCHAR(255) NOT NULL,
+    level_key VARCHAR(255) NOT NULL,
+    code VARCHAR(255) NOT NULL,
+    value VARCHAR(255) NOT NULL,
+    description TEXT,
+    difficulty_id UUID NOT NULL,
+    CONSTRAINT fk_game_level_code_difficulty FOREIGN KEY (difficulty_id) REFERENCES game_code_difficulty(id),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL
+);
 
-UPDATE game_level_code
-SET value = code
-WHERE value IS NULL;
-
-INSERT INTO game_code_difficulty(id, value, description, created_at, updated_at)
-VALUES ('00000000-0000-0000-0000-000000000001'::uuid, 'normal', 'Default migrated difficulty', now(), now())
-ON CONFLICT (value) DO NOTHING;
-
-UPDATE game_level_code
-SET difficulty_id = (
-    SELECT id
-    FROM game_code_difficulty
-    WHERE value = 'normal'
-    LIMIT 1
-)
-WHERE difficulty_id IS NULL;
-
-ALTER TABLE game_level_code
-    ALTER COLUMN value SET NOT NULL,
-    ALTER COLUMN difficulty_id SET NOT NULL;
-
-ALTER TABLE game_level_code
-    ADD CONSTRAINT fk_game_level_code_difficulty FOREIGN KEY (difficulty_id)
-        REFERENCES game_code_difficulty(id);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_game_level_code_value
+    ON game_level_code(process_id, level_key, code);
 
 CREATE TABLE IF NOT EXISTS game_code_attempt (
     id UUID PRIMARY KEY,
