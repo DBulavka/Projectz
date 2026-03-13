@@ -1,0 +1,112 @@
+--liquibase formatted sql
+
+--changeset codex:1
+CREATE TABLE IF NOT EXISTS users (
+    id UUID PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(32) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS group_type (
+    id UUID PRIMARY KEY,
+    code VARCHAR(100) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS user_group (
+    id UUID PRIMARY KEY,
+    group_type_id UUID NOT NULL,
+    key VARCHAR(255) NOT NULL UNIQUE,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    CONSTRAINT fk_group_type FOREIGN KEY (group_type_id) REFERENCES group_type(id)
+);
+
+CREATE TABLE IF NOT EXISTS user_group_membership (
+    id UUID PRIMARY KEY,
+    user_id UUID NOT NULL,
+    group_id UUID NOT NULL,
+    group_role VARCHAR(32) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    CONSTRAINT fk_group_membership_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_group_membership_group FOREIGN KEY (group_id) REFERENCES user_group(id) ON DELETE CASCADE,
+    CONSTRAINT uq_group_membership UNIQUE (user_id, group_id)
+);
+
+CREATE TABLE IF NOT EXISTS audit_log (
+    id UUID PRIMARY KEY,
+    user_id UUID,
+    entity_type VARCHAR(64) NOT NULL,
+    entity_id VARCHAR(255) NOT NULL,
+    action VARCHAR(64) NOT NULL,
+    payload_json TEXT,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS game_level_code (
+    id UUID PRIMARY KEY,
+    process_id VARCHAR(255) NOT NULL,
+    level_key VARCHAR(255) NOT NULL,
+    code VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_game_level_code_value
+    ON game_level_code(process_id, level_key, code);
+
+CREATE TABLE IF NOT EXISTS game_code_difficulty (
+    id UUID PRIMARY KEY,
+    value VARCHAR(100) NOT NULL UNIQUE,
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL
+);
+
+ALTER TABLE game_level_code
+    ADD COLUMN IF NOT EXISTS value VARCHAR(255),
+    ADD COLUMN IF NOT EXISTS description TEXT,
+    ADD COLUMN IF NOT EXISTS difficulty_id UUID;
+
+UPDATE game_level_code
+SET value = code
+WHERE value IS NULL;
+
+INSERT INTO game_code_difficulty(id, value, description, created_at, updated_at)
+VALUES ('00000000-0000-0000-0000-000000000001'::uuid, 'normal', 'Default migrated difficulty', now(), now())
+ON CONFLICT (value) DO NOTHING;
+
+UPDATE game_level_code
+SET difficulty_id = (
+    SELECT id
+    FROM game_code_difficulty
+    WHERE value = 'normal'
+    LIMIT 1
+)
+WHERE difficulty_id IS NULL;
+
+ALTER TABLE game_level_code
+    ALTER COLUMN value SET NOT NULL,
+    ALTER COLUMN difficulty_id SET NOT NULL;
+
+ALTER TABLE game_level_code
+    ADD CONSTRAINT fk_game_level_code_difficulty FOREIGN KEY (difficulty_id)
+        REFERENCES game_code_difficulty(id);
+
+CREATE TABLE IF NOT EXISTS game_code_attempt (
+    id UUID PRIMARY KEY,
+    task_id VARCHAR(255) NOT NULL,
+    process_id VARCHAR(255) NOT NULL,
+    level_key VARCHAR(255) NOT NULL,
+    value VARCHAR(255) NOT NULL,
+    is_correct BOOLEAN NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_game_code_attempt_task_created
+    ON game_code_attempt(task_id, created_at);
