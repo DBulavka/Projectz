@@ -4,6 +4,6 @@ import java.util.List;
 
 public record TaskGameProgressDto(
         int totalCodes,
-        int enteredCorrectCodes,
+        int doneCodes,
         List<TaskGameCodeDto> codes
 ) {}

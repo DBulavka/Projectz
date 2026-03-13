@@ -24,6 +24,9 @@ public class GameLevelCode {
     @Column(name = "level_key", nullable = false)
     private String levelKey;
 
+    @Column(name = "code", nullable = false)
+    private String code;
+
     @Column(nullable = false)
     private String value;
 

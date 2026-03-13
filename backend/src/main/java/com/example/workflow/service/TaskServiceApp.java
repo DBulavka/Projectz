@@ -5,10 +5,7 @@ import com.example.workflow.dto.task.SubmitGameCodeResponse;
 import com.example.workflow.dto.task.TaskDto;
 import com.example.workflow.dto.task.TaskGameCodeDto;
 import com.example.workflow.dto.task.TaskGameProgressDto;
-import com.example.workflow.entity.GameCodeAttempt;
-import com.example.workflow.entity.GroupType;
-import com.example.workflow.entity.UserGroup;
-import com.example.workflow.entity.UserGroupMembership;
+import com.example.workflow.entity.*;
 import com.example.workflow.exception.ApiException;
 import com.example.workflow.repository.GameCodeAttemptRepository;
 import com.example.workflow.repository.GameLevelCodeRepository;
@@ -23,16 +20,10 @@ import org.flowable.engine.TaskService;
 import org.flowable.task.api.Task;
 import org.flowable.task.api.history.HistoricTaskInstance;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -48,44 +39,25 @@ public class TaskServiceApp {
     private final GameLevelCodeRepository gameLevelCodeRepository;
     private final GameCodeAttemptRepository gameCodeAttemptRepository;
 
-    public List<Task> myTasks(String groupTypeCode) {
-        Map<String, Task> tasksById = new LinkedHashMap<>();
-        for (Task task : taskService.createTaskQuery().taskAssignee(securityUtils.currentEmail()).list()) {
-            tasksById.put(task.getId(), task);
-        }
-
-        for (UUID groupId : resolveUserGroupIds(groupTypeCode)) {
-            for (Task task : taskService.createTaskQuery().processInstanceBusinessKeyLikeIgnoreCase(groupId.toString()).list()) {
-                tasksById.put(task.getId(), task);
-            }
-        }
-
-        List<Task> result = new ArrayList<>(tasksById.values());
-        result.sort(Comparator.comparing(Task::getCreateTime, Comparator.nullsLast(Comparator.naturalOrder())).reversed());
-        return result;
-    }
-
-
+    @Transactional
     public List<TaskDto> myTaskDtos(String groupTypeCode) {
         return myTasks(groupTypeCode).stream()
                 .map(this::toTaskDto)
                 .toList();
     }
-    public Task getTask(String taskId) {
-        Task task = taskService.createTaskQuery().taskId(taskId).singleResult();
-        if (task == null) throw new ApiException("Task not found");
-        return task;
-    }
 
+    @Transactional
     public TaskDto getTaskDto(String taskId) {
         return toTaskDto(getTask(taskId));
     }
 
+    @Transactional
     public void complete(String taskId, CompleteTaskRequest req) {
         Task task = getTask(taskId);
         taskService.complete(task.getId(), variablesOrEmpty(req));
     }
 
+    @Transactional
     public SubmitGameCodeResponse submitGameCode(String taskId, String value) {
         Task task = getTask(taskId);
         var processDefinition = repositoryService.createProcessDefinitionQuery()
@@ -102,7 +74,7 @@ public class TaskServiceApp {
                 .filter(code -> !code.isEmpty())
                 .collect(Collectors.collectingAndThen(
                         Collectors.toMap(
-                                code -> code.toLowerCase(),
+                                String::toLowerCase,
                                 code -> code,
                                 (left, right) -> left,
                                 LinkedHashMap::new
@@ -133,7 +105,7 @@ public class TaskServiceApp {
                 .collect(Collectors.toCollection(HashSet::new));
 
         boolean levelCompleted = requiredCodes.stream()
-                .map(c -> c.toLowerCase())
+                .map(String::toLowerCase)
                 .allMatch(enteredCorrectCodes::contains);
 
         if (levelCompleted) {
@@ -144,10 +116,32 @@ public class TaskServiceApp {
         return new SubmitGameCodeResponse(levelCompleted, enteredCodes, requiredCodes);
     }
 
+    public List<Task> myTasks(String groupTypeCode) {
+        Map<String, Task> tasksById = new LinkedHashMap<>();
+        for (Task task : taskService.createTaskQuery().taskAssignee(securityUtils.currentEmail()).list()) {
+            tasksById.put(task.getId(), task);
+        }
+
+        for (UUID groupId : resolveUserGroupIds(groupTypeCode)) {
+            for (Task task : taskService.createTaskQuery().processInstanceBusinessKeyLikeIgnoreCase(groupId.toString()).list()) {
+                tasksById.put(task.getId(), task);
+            }
+        }
+
+        List<Task> result = new ArrayList<>(tasksById.values());
+        result.sort(Comparator.comparing(Task::getCreateTime, Comparator.nullsLast(Comparator.naturalOrder())).reversed());
+        return result;
+    }
+
+    public Task getTask(String taskId) {
+        Task task = taskService.createTaskQuery().taskId(taskId).singleResult();
+        if (task == null) throw new ApiException("Task not found");
+        return task;
+    }
+
     public List<HistoricTaskInstance> adminTasks() {
         return historyService.createHistoricTaskInstanceQuery().orderByTaskCreateTime().desc().list();
     }
-
 
     private TaskDto toTaskDto(Task task) {
         return new TaskDto(
@@ -169,22 +163,10 @@ public class TaskServiceApp {
             return null;
         }
 
-        List<String> requiredCodes = gameLevelCodeRepository
-                .findByProcessIdAndLevelKeyOrderByCreatedAtAsc(processDefinition.getId(), task.getTaskDefinitionKey())
-                .stream()
-                .map(c -> c.getValue().trim())
-                .filter(code -> !code.isEmpty())
-                .collect(Collectors.collectingAndThen(
-                        Collectors.toMap(
-                                code -> code.toLowerCase(),
-                                code -> code,
-                                (left, right) -> left,
-                                LinkedHashMap::new
-                        ),
-                        map -> new ArrayList<>(map.values())
-                ));
+        List<GameLevelCode> levelCodes = gameLevelCodeRepository
+                .findByProcessIdAndLevelKeyOrderByCreatedAtAsc(processDefinition.getId(), task.getTaskDefinitionKey());
 
-        if (requiredCodes.isEmpty()) {
+        if (levelCodes.isEmpty()) {
             return null;
         }
 
@@ -193,15 +175,24 @@ public class TaskServiceApp {
                 .map(attempt -> attempt.getValue().trim().toLowerCase())
                 .collect(Collectors.toSet());
 
-        List<TaskGameCodeDto> codes = requiredCodes.stream()
-                .map(code -> new TaskGameCodeDto(code, enteredCorrectCodes.contains(code.toLowerCase())))
+        List<TaskGameCodeDto> codes = levelCodes.stream()
+                .map(code -> {
+                    boolean done = enteredCorrectCodes.contains(code.getValue().trim().toLowerCase());
+                    return TaskGameCodeDto.builder()
+                            .code(code.getCode())
+                            .difficulty(code.getDifficulty().getValue())
+                            .description(code.getDescription())
+                            .value(done ? code.getValue() : null)
+                            .done(done)
+                            .build();
+                })
                 .toList();
 
-        int enteredCorrectCodesCount = (int) codes.stream()
-                .filter(TaskGameCodeDto::entered)
+        int doneCodes = (int) codes.stream()
+                .filter(TaskGameCodeDto::isDone)
                 .count();
 
-        return new TaskGameProgressDto(requiredCodes.size(), enteredCorrectCodesCount, codes);
+        return new TaskGameProgressDto(levelCodes.size(), doneCodes, codes);
     }
     private Map<String, Object> variablesOrEmpty(CompleteTaskRequest req) {
         return req.variables() == null ? Map.of() : req.variables();
