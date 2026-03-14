@@ -114,3 +114,22 @@ CREATE TABLE IF NOT EXISTS game_registration (
 CREATE INDEX IF NOT EXISTS idx_game_start_at_pending
     ON game(start_at)
     WHERE started_at IS NULL;
+
+CREATE TABLE IF NOT EXISTS game_team (
+    id UUID PRIMARY KEY,
+    game_id UUID NOT NULL,
+    group_id UUID NOT NULL,
+    process_instance_id VARCHAR(255),
+    status VARCHAR(32) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    CONSTRAINT fk_game_team_game FOREIGN KEY (game_id) REFERENCES game(id) ON DELETE CASCADE,
+    CONSTRAINT fk_game_team_group FOREIGN KEY (group_id) REFERENCES user_group(id) ON DELETE CASCADE,
+    CONSTRAINT uq_game_team UNIQUE (game_id, group_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_game_team_status
+    ON game_team(status);
+
+CREATE INDEX IF NOT EXISTS idx_game_team_instance
+    ON game_team(process_instance_id);

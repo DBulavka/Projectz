@@ -4,6 +4,7 @@ import com.example.workflow.dto.game.GameCreateRequest;
 import com.example.workflow.dto.game.GameDto;
 import com.example.workflow.dto.game.GameRegistrationDto;
 import com.example.workflow.dto.game.GameRegistrationRequest;
+import com.example.workflow.dto.game.GameTeamDto;
 import com.example.workflow.service.GameService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +33,11 @@ public class GameController {
         return gameService.listRegistrations(gameId);
     }
 
+    @GetMapping("/api/admin/games/{gameId}/teams")
+    public List<GameTeamDto> listTeams(@PathVariable UUID gameId) {
+        return gameService.listTeams(gameId);
+    }
+
     @PostMapping("/api/games/{gameId}/registrations")
     public GameRegistrationDto register(@PathVariable UUID gameId,
                                         @Valid @RequestBody GameRegistrationRequest req) {
@@ -41,5 +47,10 @@ public class GameController {
     @PostMapping("/api/admin/game-registrations/{registrationId}/confirm")
     public GameRegistrationDto confirm(@PathVariable UUID registrationId) {
         return gameService.confirmRegistration(registrationId);
+    }
+
+    @PostMapping("/api/admin/game-registrations/{registrationId}/reject")
+    public GameRegistrationDto reject(@PathVariable UUID registrationId) {
+        return gameService.rejectRegistration(registrationId);
     }
 }
