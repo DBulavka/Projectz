@@ -1,10 +1,12 @@
 package com.example.workflow.dto.process;
 
 import java.util.List;
+import lombok.Builder;
+import lombok.Value;
 
-@lombok.Value
-@lombok.Builder
+@Value
+@Builder
 public class GameLevelCodesDto {
-    private String levelKey;
-    private List<GameLevelCodeItemDto> codes;
+    String levelKey;
+    List<GameLevelCodeItemDto> codes;
 }

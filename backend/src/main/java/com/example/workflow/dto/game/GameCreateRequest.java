@@ -3,15 +3,17 @@ package com.example.workflow.dto.game;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.Builder;
+import lombok.Value;
 
 import java.time.Instant;
 
-@lombok.Value
-@lombok.Builder
+@Value
+@Builder
 public class GameCreateRequest {
-    private @NotNull Integer number;
-    private @NotBlank String processDefinitionId;
-    private @NotBlank String name;
-    private String description;
-    private @NotNull @Future Instant startAt;
+    @NotNull Integer number;
+    @NotBlank String processDefinitionId;
+    @NotBlank String name;
+    String description;
+    @NotNull @Future Instant startAt;
 }

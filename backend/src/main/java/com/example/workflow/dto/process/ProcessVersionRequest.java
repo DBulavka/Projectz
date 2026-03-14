@@ -1,9 +1,11 @@
 package com.example.workflow.dto.process;
 
 import jakarta.validation.constraints.NotBlank;
+import lombok.Builder;
+import lombok.Value;
 
-@lombok.Value
-@lombok.Builder
+@Value
+@Builder
 public class ProcessVersionRequest {
-    private @NotBlank String bpmnXml;
+    @NotBlank String bpmnXml;
 }

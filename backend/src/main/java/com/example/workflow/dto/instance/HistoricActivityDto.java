@@ -1,15 +1,17 @@
 package com.example.workflow.dto.instance;
 
 import java.time.Instant;
+import lombok.Builder;
+import lombok.Value;
 
-@lombok.Value
-@lombok.Builder
+@Value
+@Builder
 public class HistoricActivityDto {
-    private String activityId;
-    private String activityName;
-    private String activityType;
-    private String assignee;
-    private Instant startTime;
-    private Instant endTime;
-    private Long durationInMillis;
+    String activityId;
+    String activityName;
+    String activityType;
+    String assignee;
+    Instant startTime;
+    Instant endTime;
+    Long durationInMillis;
 }

@@ -1,8 +1,11 @@
 package com.example.workflow.dto.process;
 
-@lombok.Value
-@lombok.Builder
+import lombok.Builder;
+import lombok.Value;
+
+@Value
+@Builder
 public class GameCodeDifficultyDto {
-    private String value;
-    private String description;
+    String value;
+    String description;
 }

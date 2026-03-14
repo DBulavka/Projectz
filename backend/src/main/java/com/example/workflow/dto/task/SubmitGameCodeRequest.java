@@ -1,9 +1,11 @@
 package com.example.workflow.dto.task;
 
 import jakarta.validation.constraints.NotBlank;
+import lombok.Builder;
+import lombok.Value;
 
-@lombok.Value
-@lombok.Builder
+@Value
+@Builder
 public class SubmitGameCodeRequest {
-    private @NotBlank String value;
+    @NotBlank String value;
 }

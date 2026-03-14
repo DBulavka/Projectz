@@ -1,12 +1,14 @@
 package com.example.workflow.dto.process;
 
 import jakarta.validation.constraints.NotBlank;
+import lombok.Builder;
+import lombok.Value;
 
-@lombok.Value
-@lombok.Builder
+@Value
+@Builder
 public class GameLevelCodeItemRequest {
-    private @NotBlank String value;
-    private String description;
-    private @NotBlank String difficultyValue;
-    private String difficultyDescription;
+    @NotBlank String value;
+    String description;
+    @NotBlank String difficultyValue;
+    String difficultyDescription;
 }

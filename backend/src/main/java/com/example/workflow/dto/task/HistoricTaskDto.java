@@ -1,16 +1,18 @@
 package com.example.workflow.dto.task;
 
 import java.util.Date;
+import lombok.Builder;
+import lombok.Value;
 
-@lombok.Value
-@lombok.Builder
+@Value
+@Builder
 public class HistoricTaskDto {
-    private String id;
-    private String name;
-    private String assignee;
-    private String processInstanceId;
-    private Date createTime;
-    private Date endTime;
-    private Long durationInMillis;
-    private String deleteReason;
+    String id;
+    String name;
+    String assignee;
+    String processInstanceId;
+    Date createTime;
+    Date endTime;
+    Long durationInMillis;
+    String deleteReason;
 }

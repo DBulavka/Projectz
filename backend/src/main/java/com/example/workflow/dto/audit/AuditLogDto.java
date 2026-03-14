@@ -2,15 +2,17 @@ package com.example.workflow.dto.audit;
 
 import java.time.Instant;
 import java.util.UUID;
+import lombok.Builder;
+import lombok.Value;
 
-@lombok.Value
-@lombok.Builder
+@Value
+@Builder
 public class AuditLogDto {
-    private UUID id;
-    private UUID userId;
-    private String entityType;
-    private String entityId;
-    private String action;
-    private String payloadJson;
-    private Instant createdAt;
+    UUID id;
+    UUID userId;
+    String entityType;
+    String entityId;
+    String action;
+    String payloadJson;
+    Instant createdAt;
 }

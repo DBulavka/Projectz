@@ -1,10 +1,12 @@
 package com.example.workflow.dto.task;
 
 import java.util.Map;
+import lombok.Builder;
+import lombok.Value;
 
-@lombok.Value
-@lombok.Builder
+@Value
+@Builder
 public class CompleteTaskRequest {
-    private Map<String, Object> variables;
-    private String code;
+    Map<String, Object> variables;
+    String code;
 }

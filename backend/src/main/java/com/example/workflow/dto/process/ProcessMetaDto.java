@@ -1,11 +1,14 @@
 package com.example.workflow.dto.process;
 
-@lombok.Value
-@lombok.Builder
+import lombok.Builder;
+import lombok.Value;
+
+@Value
+@Builder
 public class ProcessMetaDto {
-    private String id;
-    private String name;
-    private String description;
-    private int version;
-    private String deploymentId;
+    String id;
+    String name;
+    String description;
+    int version;
+    String deploymentId;
 }

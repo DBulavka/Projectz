@@ -1,11 +1,13 @@
 package com.example.workflow.dto.task;
 
 import java.util.List;
+import lombok.Builder;
+import lombok.Value;
 
-@lombok.Value
-@lombok.Builder
+@Value
+@Builder
 public class SubmitGameCodeResponse {
-    private boolean levelCompleted;
-    private List<String> enteredCodes;
-    private List<String> requiredCodes;
+    boolean levelCompleted;
+    List<String> enteredCodes;
+    List<String> requiredCodes;
 }

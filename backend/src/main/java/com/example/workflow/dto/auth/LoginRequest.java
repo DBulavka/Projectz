@@ -1,10 +1,12 @@
 package com.example.workflow.dto.auth;
 
 import jakarta.validation.constraints.NotBlank;
+import lombok.Builder;
+import lombok.Value;
 
-@lombok.Value
-@lombok.Builder
+@Value
+@Builder
 public class LoginRequest {
-    private @NotBlank String email;
-    private @NotBlank String password;
+    @NotBlank String email;
+    @NotBlank String password;
 }
