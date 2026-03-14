@@ -43,9 +43,9 @@ public class GameService {
 
     @Transactional
     public GameDto create(GameCreateRequest req) {
-        gameRepository.findByNumber(req.getNumber())
+        gameRepository.findByCode(req.getCode())
                 .ifPresent(existing -> {
-                    throw new ApiException("Game number already exists");
+                    throw new ApiException("Game code already exists");
                 });
 
         ProcessDefinition processDefinition = repositoryService.createProcessDefinitionQuery()
@@ -58,7 +58,7 @@ public class GameService {
 
         Instant now = Instant.now();
         Game game = gameRepository.save(Game.builder()
-                .number(req.getNumber())
+                .code(req.getCode().trim())
                 .processDefinitionId(req.getProcessDefinitionId())
                 .name(req.getName().trim())
                 .description(normalizeNullable(req.getDescription()))
@@ -242,7 +242,7 @@ public class GameService {
     private GameDto toDto(Game game) {
         return new GameDto(
                 game.getId(),
-                game.getNumber(),
+                game.getCode(),
                 game.getProcessDefinitionId(),
                 game.getName(),
                 game.getDescription(),

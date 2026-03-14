@@ -9,7 +9,7 @@ import lombok.Value;
 @Builder
 public class GameDto {
     UUID id;
-    Integer number;
+    String code;
     String processDefinitionId;
     String name;
     String description;
