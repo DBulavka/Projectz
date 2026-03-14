@@ -26,6 +26,8 @@ public class TaskController {
 
     @PostMapping("/{taskId}/complete")
     public void complete(@PathVariable String taskId, @RequestBody(required = false) CompleteTaskRequest req) {
-        taskService.complete(taskId, req == null ? new CompleteTaskRequest(java.util.Map.of(), null) : req);
+        taskService.complete(taskId, req == null
+                ? CompleteTaskRequest.builder().variables(java.util.Map.of()).enteredCode(null).build()
+                : req);
     }
 }

@@ -122,12 +122,12 @@ public class ProcessService {
 
     public List<GameLevelCodeItemDto> replaceLevelCodes(String processId, String levelKey, GameLevelCodesRequest req) {
         List<GameLevelCodeItemRequest> normalizedCodes = req.getCodes().stream()
-                .map(code -> new GameLevelCodeItemRequest(
-                        code.getValue().trim(),
-                        normalizeNullable(code.getDescription()),
-                        code.getDifficultyValue().trim(),
-                        normalizeNullable(code.getDifficultyDescription())
-                ))
+                .map(code -> GameLevelCodeItemRequest.builder()
+                        .value(code.getValue().trim())
+                        .description(normalizeNullable(code.getDescription()))
+                        .difficultyValue(code.getDifficultyValue().trim())
+                        .difficultyDescription(normalizeNullable(code.getDifficultyDescription()))
+                        .build())
                 .filter(code -> !code.getValue().isEmpty() && !code.getDifficultyValue().isEmpty())
                 .collect(java.util.stream.Collectors.collectingAndThen(
                         java.util.stream.Collectors.toMap(
@@ -188,11 +188,14 @@ public class ProcessService {
     private GameLevelCodeItemDto toGameLevelCodeItemDto(GameLevelCode code) {
         GameCodeDifficulty difficulty = gameCodeDifficultyRepository.findById(code.getDifficultyId())
                 .orElseThrow(() -> new ApiException("Code difficulty not found"));
-        return new GameLevelCodeItemDto(
-                code.getValue(),
-                code.getDescription(),
-                new GameCodeDifficultyDto(difficulty.getValue(), difficulty.getDescription())
-        );
+        return GameLevelCodeItemDto.builder()
+                .value(code.getValue())
+                .description(code.getDescription())
+                .difficulty(GameCodeDifficultyDto.builder()
+                        .value(difficulty.getValue())
+                        .description(difficulty.getDescription())
+                        .build())
+                .build();
     }
 
     private String normalizeNullable(String value) {
