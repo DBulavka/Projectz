@@ -2,9 +2,11 @@ package com.example.workflow.dto.process;
 
 import jakarta.validation.constraints.NotBlank;
 
-public record GameLevelCodeItemRequest(
-        @NotBlank String value,
-        String description,
-        @NotBlank String difficultyValue,
-        String difficultyDescription
-) {}
+@lombok.Value
+@lombok.Builder
+public class GameLevelCodeItemRequest {
+    private @NotBlank String value;
+    private String description;
+    private @NotBlank String difficultyValue;
+    private String difficultyDescription;
+}

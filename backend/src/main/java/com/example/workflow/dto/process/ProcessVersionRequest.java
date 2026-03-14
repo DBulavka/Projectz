@@ -2,4 +2,8 @@ package com.example.workflow.dto.process;
 
 import jakarta.validation.constraints.NotBlank;
 
-public record ProcessVersionRequest(@NotBlank String bpmnXml) {}
+@lombok.Value
+@lombok.Builder
+public class ProcessVersionRequest {
+    private @NotBlank String bpmnXml;
+}

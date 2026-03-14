@@ -32,8 +32,8 @@ public class ProcessService {
     }
 
     public ProcessDefinition create(ProcessMetaRequest req) {
-        String key = req.key();
-        String name = req.name();
+        String key = req.getKey();
+        String name = req.getName();
         String bpmn = """
                 <?xml version=\"1.0\" encoding=\"UTF-8\"?>
                 <definitions xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" targetNamespace=\"Examples\">
@@ -46,7 +46,7 @@ public class ProcessService {
                 """.formatted(key, name);
         Deployment deployment = repositoryService.createDeployment()
                 .name("process-" + key)
-                .category(req.category())
+                .category(req.getCategory())
                 .addString(key + ".bpmn20.xml", bpmn)
                 .deploy();
         ProcessDefinition created = repositoryService.createProcessDefinitionQuery().deploymentId(deployment.getId()).singleResult();
@@ -83,7 +83,7 @@ public class ProcessService {
         ProcessDefinition process = get(processId);
         Deployment deployment = repositoryService.createDeployment()
                 .name("process-" + process.getKey() + "-v-next")
-                .addString(process.getKey() + ".bpmn20.xml", req.bpmnXml())
+                .addString(process.getKey() + ".bpmn20.xml", req.getBpmnXml())
                 .deploy();
         return repositoryService.createProcessDefinitionQuery().deploymentId(deployment.getId()).singleResult();
     }
@@ -101,7 +101,7 @@ public class ProcessService {
         ProcessDefinition version = getVersion(processId, versionId);
         Deployment deployment = repositoryService.createDeployment()
                 .name("process-" + version.getKey() + "-v" + version.getVersion())
-                .addString(version.getKey() + ".bpmn20.xml", req.bpmnXml())
+                .addString(version.getKey() + ".bpmn20.xml", req.getBpmnXml())
                 .deploy();
         return repositoryService.createProcessDefinitionQuery().deploymentId(deployment.getId()).singleResult();
     }
@@ -121,17 +121,17 @@ public class ProcessService {
     }
 
     public List<GameLevelCodeItemDto> replaceLevelCodes(String processId, String levelKey, GameLevelCodesRequest req) {
-        List<GameLevelCodeItemRequest> normalizedCodes = req.codes().stream()
+        List<GameLevelCodeItemRequest> normalizedCodes = req.getCodes().stream()
                 .map(code -> new GameLevelCodeItemRequest(
-                        code.value().trim(),
-                        normalizeNullable(code.description()),
-                        code.difficultyValue().trim(),
-                        normalizeNullable(code.difficultyDescription())
+                        code.getValue().trim(),
+                        normalizeNullable(code.getDescription()),
+                        code.getDifficultyValue().trim(),
+                        normalizeNullable(code.getDifficultyDescription())
                 ))
-                .filter(code -> !code.value().isEmpty() && !code.difficultyValue().isEmpty())
+                .filter(code -> !code.getValue().isEmpty() && !code.getDifficultyValue().isEmpty())
                 .collect(java.util.stream.Collectors.collectingAndThen(
                         java.util.stream.Collectors.toMap(
-                                code -> code.value() + "::" + code.difficultyValue(),
+                                code -> code.getValue() + "::" + code.getDifficultyValue(),
                                 code -> code,
                                 (left, right) -> left,
                                 java.util.LinkedHashMap::new
@@ -149,12 +149,12 @@ public class ProcessService {
         Instant now = Instant.now();
         List<GameLevelCode> toSave = normalizedCodes.stream()
                 .map(code -> {
-                    GameCodeDifficulty difficulty = findOrCreateDifficulty(code.difficultyValue(), code.difficultyDescription(), now);
+                    GameCodeDifficulty difficulty = findOrCreateDifficulty(code.getDifficultyValue(), code.getDifficultyDescription(), now);
                     return GameLevelCode.builder()
                             .processId(processId)
                             .levelKey(levelKey)
-                            .value(code.value())
-                            .description(code.description())
+                            .value(code.getValue())
+                            .description(code.getDescription())
                             .difficultyId(difficulty.getId())
                             .createdAt(now)
                             .build();

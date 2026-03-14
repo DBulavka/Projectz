@@ -41,7 +41,7 @@ public class GameController {
     @PostMapping("/api/games/{gameId}/registrations")
     public GameRegistrationDto register(@PathVariable UUID gameId,
                                         @Valid @RequestBody GameRegistrationRequest req) {
-        return gameService.register(gameId, req.groupId());
+        return gameService.register(gameId, req.getGroupId());
     }
 
     @PostMapping("/api/admin/game-registrations/{registrationId}/confirm")

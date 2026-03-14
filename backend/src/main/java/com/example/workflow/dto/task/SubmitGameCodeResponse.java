@@ -2,8 +2,10 @@ package com.example.workflow.dto.task;
 
 import java.util.List;
 
-public record SubmitGameCodeResponse(
-        boolean levelCompleted,
-        List<String> enteredCodes,
-        List<String> requiredCodes
-) {}
+@lombok.Value
+@lombok.Builder
+public class SubmitGameCodeResponse {
+    private boolean levelCompleted;
+    private List<String> enteredCodes;
+    private List<String> requiredCodes;
+}

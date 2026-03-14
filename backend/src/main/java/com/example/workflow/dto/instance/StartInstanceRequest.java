@@ -2,4 +2,9 @@ package com.example.workflow.dto.instance;
 
 import java.util.Map;
 
-public record StartInstanceRequest(String businessKey, Map<String, Object> variables) {}
+@lombok.Value
+@lombok.Builder
+public class StartInstanceRequest {
+    private String businessKey;
+    private Map<String, Object> variables;
+}

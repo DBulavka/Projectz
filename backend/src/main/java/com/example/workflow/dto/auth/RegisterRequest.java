@@ -2,4 +2,9 @@ package com.example.workflow.dto.auth;
 
 import jakarta.validation.constraints.NotBlank;
 
-public record RegisterRequest(@NotBlank String email, @NotBlank String password) {}
+@lombok.Value
+@lombok.Builder
+public class RegisterRequest {
+    private @NotBlank String email;
+    private @NotBlank String password;
+}

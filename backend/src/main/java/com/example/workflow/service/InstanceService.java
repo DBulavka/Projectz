@@ -18,7 +18,7 @@ public class InstanceService {
     private final HistoryService historyService;
 
     public ProcessInstance start(String processId, StartInstanceRequest req) {
-        return runtimeService.startProcessInstanceById(processId, req.businessKey(), req.variables());
+        return runtimeService.startProcessInstanceById(processId, req.getBusinessKey(), req.getVariables());
     }
 
     public List<ProcessInstance> list() {

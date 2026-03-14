@@ -2,12 +2,14 @@ package com.example.workflow.dto.instance;
 
 import java.time.Instant;
 
-public record HistoricActivityDto(
-        String activityId,
-        String activityName,
-        String activityType,
-        String assignee,
-        Instant startTime,
-        Instant endTime,
-        Long durationInMillis
-) {}
+@lombok.Value
+@lombok.Builder
+public class HistoricActivityDto {
+    private String activityId;
+    private String activityName;
+    private String activityType;
+    private String assignee;
+    private Instant startTime;
+    private Instant endTime;
+    private Long durationInMillis;
+}
