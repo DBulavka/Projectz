@@ -11,7 +11,7 @@ import java.time.Instant;
 @Value
 @Builder
 public class GameCreateRequest {
-    @NotNull Integer number;
+    @NotBlank String code;
     @NotBlank String processDefinitionId;
     @NotBlank String name;
     String description;

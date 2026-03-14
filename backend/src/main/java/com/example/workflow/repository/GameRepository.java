@@ -9,7 +9,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface GameRepository extends JpaRepository<Game, UUID> {
-    Optional<Game> findByNumber(Integer number);
+    Optional<Game> findByCode(String code);
 
     List<Game> findByStartedAtIsNullAndStartAtLessThanEqual(Instant now);
 }

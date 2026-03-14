@@ -19,7 +19,7 @@ public class Game {
     private UUID id;
 
     @Column(nullable = false, unique = true)
-    private Integer number;
+    private String code;
 
     @Column(nullable = false)
     private String processDefinitionId;

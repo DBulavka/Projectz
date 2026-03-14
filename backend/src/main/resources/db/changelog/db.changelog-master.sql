@@ -89,7 +89,7 @@ CREATE INDEX IF NOT EXISTS idx_game_code_attempt_task_created
 --changeset codex:2
 CREATE TABLE IF NOT EXISTS game (
     id UUID PRIMARY KEY,
-    number INTEGER NOT NULL UNIQUE,
+    code VARCHAR(255) NOT NULL UNIQUE,
     process_definition_id VARCHAR(255) NOT NULL,
     name VARCHAR(255) NOT NULL,
     description TEXT,
