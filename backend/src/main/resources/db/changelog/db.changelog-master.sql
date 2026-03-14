@@ -85,3 +85,51 @@ CREATE TABLE IF NOT EXISTS game_code_attempt (
 
 CREATE INDEX IF NOT EXISTS idx_game_code_attempt_task_created
     ON game_code_attempt(task_id, created_at);
+
+--changeset codex:2
+CREATE TABLE IF NOT EXISTS game (
+    id UUID PRIMARY KEY,
+    number INTEGER NOT NULL UNIQUE,
+    process_definition_id VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    start_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    started_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS game_registration (
+    id UUID PRIMARY KEY,
+    game_id UUID NOT NULL,
+    group_id UUID NOT NULL,
+    status VARCHAR(32) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    CONSTRAINT fk_game_registration_game FOREIGN KEY (game_id) REFERENCES game(id) ON DELETE CASCADE,
+    CONSTRAINT fk_game_registration_group FOREIGN KEY (group_id) REFERENCES user_group(id) ON DELETE CASCADE,
+    CONSTRAINT uq_game_registration UNIQUE (game_id, group_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_game_start_at_pending
+    ON game(start_at)
+    WHERE started_at IS NULL;
+
+CREATE TABLE IF NOT EXISTS game_instance (
+    id UUID PRIMARY KEY,
+    game_id UUID NOT NULL,
+    group_id UUID NOT NULL,
+    process_instance_id VARCHAR(255),
+    status VARCHAR(32) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    CONSTRAINT fk_game_instance_game FOREIGN KEY (game_id) REFERENCES game(id) ON DELETE CASCADE,
+    CONSTRAINT fk_game_instance_group FOREIGN KEY (group_id) REFERENCES user_group(id) ON DELETE CASCADE,
+    CONSTRAINT uq_game_instance UNIQUE (game_id, group_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_game_instance_status
+    ON game_instance(status);
+
+CREATE INDEX IF NOT EXISTS idx_game_instance_instance
+    ON game_instance(process_instance_id);
