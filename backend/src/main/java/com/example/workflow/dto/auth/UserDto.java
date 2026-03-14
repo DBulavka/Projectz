@@ -1,12 +1,14 @@
 package com.example.workflow.dto.auth;
 
-import java.util.UUID;
 import com.example.workflow.enums.Role;
+import java.util.UUID;
+import lombok.Builder;
+import lombok.Value;
 
-@lombok.Value
-@lombok.Builder
+@Value
+@Builder
 public class UserDto {
-    private UUID id;
-    private String email;
-    private Role role;
+    UUID id;
+    String email;
+    Role role;
 }

@@ -2,11 +2,13 @@ package com.example.workflow.dto.process;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
+import lombok.Builder;
+import lombok.Value;
 
 import java.util.List;
 
-@lombok.Value
-@lombok.Builder
+@Value
+@Builder
 public class GameLevelCodesRequest {
-    private @NotEmpty List<@Valid GameLevelCodeItemRequest> codes;
+    @NotEmpty List<@Valid GameLevelCodeItemRequest> codes;
 }

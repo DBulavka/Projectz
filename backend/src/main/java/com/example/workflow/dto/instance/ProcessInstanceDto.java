@@ -1,14 +1,16 @@
 package com.example.workflow.dto.instance;
 
 import java.time.Instant;
+import lombok.Builder;
+import lombok.Value;
 
-@lombok.Value
-@lombok.Builder
+@Value
+@Builder
 public class ProcessInstanceDto {
-    private String id;
-    private String processId;
-    private String businessKey;
-    private String businessStatus;
-    private Instant startTime;
-    private Instant endTime;
+    String id;
+    String processId;
+    String businessKey;
+    String businessStatus;
+    Instant startTime;
+    Instant endTime;
 }

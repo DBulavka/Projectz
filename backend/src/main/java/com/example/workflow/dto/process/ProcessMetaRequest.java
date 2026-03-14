@@ -1,15 +1,17 @@
 package com.example.workflow.dto.process;
 
 import jakarta.validation.constraints.NotBlank;
+import lombok.Builder;
+import lombok.Value;
 
 import java.util.UUID;
 
-@lombok.Value
-@lombok.Builder
+@Value
+@Builder
 public class ProcessMetaRequest {
-    private @NotBlank String key;
-    private @NotBlank String name;
-    private String description;
-    private String category;
-    private UUID ownerGroupId;
+    @NotBlank String key;
+    @NotBlank String name;
+    String description;
+    String category;
+    UUID ownerGroupId;
 }

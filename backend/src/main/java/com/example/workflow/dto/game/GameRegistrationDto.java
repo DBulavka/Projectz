@@ -1,14 +1,16 @@
 package com.example.workflow.dto.game;
 
 import com.example.workflow.enums.GameRegistrationStatus;
+import lombok.Builder;
+import lombok.Value;
 
 import java.util.UUID;
 
-@lombok.Value
-@lombok.Builder
+@Value
+@Builder
 public class GameRegistrationDto {
-    private UUID id;
-    private UUID gameId;
-    private UUID groupId;
-    private GameRegistrationStatus status;
+    UUID id;
+    UUID gameId;
+    UUID groupId;
+    GameRegistrationStatus status;
 }

@@ -1,7 +1,10 @@
 package com.example.workflow.dto.auth;
 
-@lombok.Value
-@lombok.Builder
+import lombok.Builder;
+import lombok.Value;
+
+@Value
+@Builder
 public class AuthResponse {
-    private String token;
+    String token;
 }
