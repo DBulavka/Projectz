@@ -240,34 +240,34 @@ public class GameService {
     }
 
     private GameDto toDto(Game game) {
-        return new GameDto(
-                game.getId(),
-                game.getCode(),
-                game.getProcessDefinitionId(),
-                game.getName(),
-                game.getDescription(),
-                game.getStartAt(),
-                game.getStartedAt()
-        );
+        return GameDto.builder()
+                .id(game.getId())
+                .code(game.getCode())
+                .processDefinitionId(game.getProcessDefinitionId())
+                .name(game.getName())
+                .description(game.getDescription())
+                .startAt(game.getStartAt())
+                .startedAt(game.getStartedAt())
+                .build();
     }
 
     private GameRegistrationDto toRegistrationDto(GameRegistration registration) {
-        return new GameRegistrationDto(
-                registration.getId(),
-                registration.getGameId(),
-                registration.getGroupId(),
-                registration.getStatus()
-        );
+        return GameRegistrationDto.builder()
+                .id(registration.getId())
+                .gameId(registration.getGameId())
+                .groupId(registration.getGroupId())
+                .status(registration.getStatus())
+                .build();
     }
 
     private GameInstanceDto toInstanceDto(GameInstance gameInstance) {
-        return new GameInstanceDto(
-                gameInstance.getId(),
-                gameInstance.getGameId(),
-                gameInstance.getGroupId(),
-                gameInstance.getProcessInstanceId(),
-                gameInstance.getStatus()
-        );
+        return GameInstanceDto.builder()
+                .id(gameInstance.getId())
+                .gameId(gameInstance.getGameId())
+                .groupId(gameInstance.getGroupId())
+                .processInstanceId(gameInstance.getProcessInstanceId())
+                .status(gameInstance.getStatus())
+                .build();
     }
 
     private String normalizeNullable(String value) {

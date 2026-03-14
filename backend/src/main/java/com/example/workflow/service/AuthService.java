@@ -35,13 +35,17 @@ public class AuthService {
                 .role(Role.USER)
                 .createdAt(Instant.now())
                 .build());
-        return new AuthResponse(jwtService.generateToken(user.getEmail(), Map.of("role", user.getRole().name())));
+        return AuthResponse.builder()
+                .token(jwtService.generateToken(user.getEmail(), Map.of("role", user.getRole().name())))
+                .build();
     }
 
     public AuthResponse login(LoginRequest request) {
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
         User user = userRepository.findByEmail(request.getEmail()).orElseThrow(() -> new ApiException("User not found"));
-        return new AuthResponse(jwtService.generateToken(user.getEmail(), Map.of("role", user.getRole().name())));
+        return AuthResponse.builder()
+                .token(jwtService.generateToken(user.getEmail(), Map.of("role", user.getRole().name())))
+                .build();
     }
 
     public User me() {

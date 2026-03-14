@@ -79,13 +79,19 @@ public class ProcessController {
 
     @GetMapping("/{id}/levels/{levelKey}/codes")
     public GameLevelCodesDto getLevelCodes(@PathVariable String id, @PathVariable String levelKey) {
-        return new GameLevelCodesDto(levelKey, processService.getLevelCodes(id, levelKey));
+        return GameLevelCodesDto.builder()
+                .levelKey(levelKey)
+                .codes(processService.getLevelCodes(id, levelKey))
+                .build();
     }
 
     @PutMapping("/{id}/levels/{levelKey}/codes")
     public GameLevelCodesDto replaceLevelCodes(@PathVariable String id,
                                                @PathVariable String levelKey,
                                                @Valid @RequestBody GameLevelCodesRequest req) {
-        return new GameLevelCodesDto(levelKey, processService.replaceLevelCodes(id, levelKey, req));
+        return GameLevelCodesDto.builder()
+                .levelKey(levelKey)
+                .codes(processService.replaceLevelCodes(id, levelKey, req))
+                .build();
     }
 }

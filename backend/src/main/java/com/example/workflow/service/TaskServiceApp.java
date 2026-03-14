@@ -113,7 +113,11 @@ public class TaskServiceApp {
         }
 
         List<String> enteredCodes = attempts.stream().map(GameCodeAttempt::getValue).toList();
-        return new SubmitGameCodeResponse(levelCompleted, enteredCodes, requiredCodes);
+        return SubmitGameCodeResponse.builder()
+                .levelCompleted(levelCompleted)
+                .enteredCodes(enteredCodes)
+                .requiredCodes(requiredCodes)
+                .build();
     }
 
     public List<Task> myTasks(String groupTypeCode) {
@@ -144,15 +148,15 @@ public class TaskServiceApp {
     }
 
     private TaskDto toTaskDto(Task task) {
-        return new TaskDto(
-                task.getId(),
-                task.getName(),
-                task.getAssignee(),
-                task.getProcessInstanceId(),
-                task.getCreateTime() == null ? null : task.getCreateTime().toInstant(),
-                task.getDueDate() == null ? null : task.getDueDate().toInstant(),
-                resolveGameProgress(task)
-        );
+        return TaskDto.builder()
+                .id(task.getId())
+                .name(task.getName())
+                .assignee(task.getAssignee())
+                .processInstanceId(task.getProcessInstanceId())
+                .createTime(task.getCreateTime() == null ? null : task.getCreateTime().toInstant())
+                .dueDate(task.getDueDate() == null ? null : task.getDueDate().toInstant())
+                .gameProgress(resolveGameProgress(task))
+                .build();
     }
 
     private TaskGameProgressDto resolveGameProgress(Task task) {
@@ -192,7 +196,11 @@ public class TaskServiceApp {
                 .filter(TaskGameCodeDto::isDone)
                 .count();
 
-        return new TaskGameProgressDto(levelCodes.size(), doneCodes, codes);
+        return TaskGameProgressDto.builder()
+                .totalCodes(levelCodes.size())
+                .doneCodes(doneCodes)
+                .codes(codes)
+                .build();
     }
     private Map<String, Object> variablesOrEmpty(CompleteTaskRequest req) {
         return req.getVariables() == null ? Map.of() : req.getVariables();
