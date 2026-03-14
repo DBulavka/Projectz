@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotEmpty;
 
 import java.util.List;
 
-public record GameLevelCodesRequest(
-        @NotEmpty List<@Valid GameLevelCodeItemRequest> codes
-) {}
+@lombok.Value
+@lombok.Builder
+public class GameLevelCodesRequest {
+    private @NotEmpty List<@Valid GameLevelCodeItemRequest> codes;
+}

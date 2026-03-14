@@ -4,7 +4,8 @@ import jakarta.validation.constraints.NotNull;
 
 import java.util.UUID;
 
-public record GameRegistrationRequest(
-        @NotNull UUID groupId
-) {
+@lombok.Value
+@lombok.Builder
+public class GameRegistrationRequest {
+    private @NotNull UUID groupId;
 }

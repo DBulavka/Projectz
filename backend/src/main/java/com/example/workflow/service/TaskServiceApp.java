@@ -195,7 +195,7 @@ public class TaskServiceApp {
         return new TaskGameProgressDto(levelCodes.size(), doneCodes, codes);
     }
     private Map<String, Object> variablesOrEmpty(CompleteTaskRequest req) {
-        return req.variables() == null ? Map.of() : req.variables();
+        return req.getVariables() == null ? Map.of() : req.getVariables();
     }
 
     private Set<UUID> resolveUserGroupIds(String groupTypeCode) {

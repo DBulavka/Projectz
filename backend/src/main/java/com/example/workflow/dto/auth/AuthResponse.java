@@ -1,3 +1,7 @@
 package com.example.workflow.dto.auth;
 
-public record AuthResponse(String token) {}
+@lombok.Value
+@lombok.Builder
+public class AuthResponse {
+    private String token;
+}

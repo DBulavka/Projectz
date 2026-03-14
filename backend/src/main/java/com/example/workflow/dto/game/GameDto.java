@@ -3,13 +3,14 @@ package com.example.workflow.dto.game;
 import java.time.Instant;
 import java.util.UUID;
 
-public record GameDto(
-        UUID id,
-        Integer number,
-        String processDefinitionId,
-        String name,
-        String description,
-        Instant startAt,
-        Instant startedAt
-) {
+@lombok.Value
+@lombok.Builder
+public class GameDto {
+    private UUID id;
+    private Integer number;
+    private String processDefinitionId;
+    private String name;
+    private String description;
+    private Instant startAt;
+    private Instant startedAt;
 }

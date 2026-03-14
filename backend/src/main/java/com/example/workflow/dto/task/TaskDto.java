@@ -2,12 +2,14 @@ package com.example.workflow.dto.task;
 
 import java.time.Instant;
 
-public record TaskDto(
-        String id,
-        String name,
-        String assignee,
-        String processInstanceId,
-        Instant createTime,
-        Instant dueDate,
-        TaskGameProgressDto gameProgress
-) {}
+@lombok.Value
+@lombok.Builder
+public class TaskDto {
+    private String id;
+    private String name;
+    private String assignee;
+    private String processInstanceId;
+    private Instant createTime;
+    private Instant dueDate;
+    private TaskGameProgressDto gameProgress;
+}

@@ -1,7 +1,9 @@
 package com.example.workflow.dto.process;
 
-public record GameLevelCodeItemDto(
-        String value,
-        String description,
-        GameCodeDifficultyDto difficulty
-) {}
+@lombok.Value
+@lombok.Builder
+public class GameLevelCodeItemDto {
+    private String value;
+    private String description;
+    private GameCodeDifficultyDto difficulty;
+}

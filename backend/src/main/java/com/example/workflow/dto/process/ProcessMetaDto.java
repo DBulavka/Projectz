@@ -1,9 +1,11 @@
 package com.example.workflow.dto.process;
 
-public record ProcessMetaDto(
-        String id,
-        String name,
-        String description,
-        int version,
-        String deploymentId
-) {}
+@lombok.Value
+@lombok.Builder
+public class ProcessMetaDto {
+    private String id;
+    private String name;
+    private String description;
+    private int version;
+    private String deploymentId;
+}

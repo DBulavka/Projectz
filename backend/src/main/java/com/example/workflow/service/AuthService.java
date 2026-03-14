@@ -28,10 +28,10 @@ public class AuthService {
     private final SecurityUtils securityUtils;
 
     public AuthResponse register(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.email())) throw new ApiException("Email already exists");
+        if (userRepository.existsByEmail(request.getEmail())) throw new ApiException("Email already exists");
         User user = userRepository.save(User.builder()
-                .email(request.email())
-                .passwordHash(passwordEncoder.encode(request.password()))
+                .email(request.getEmail())
+                .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .role(Role.USER)
                 .createdAt(Instant.now())
                 .build());
@@ -39,8 +39,8 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
-        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.email(), request.password()));
-        User user = userRepository.findByEmail(request.email()).orElseThrow(() -> new ApiException("User not found"));
+        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+        User user = userRepository.findByEmail(request.getEmail()).orElseThrow(() -> new ApiException("User not found"));
         return new AuthResponse(jwtService.generateToken(user.getEmail(), Map.of("role", user.getRole().name())));
     }
 

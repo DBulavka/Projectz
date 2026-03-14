@@ -6,11 +6,12 @@ import jakarta.validation.constraints.NotNull;
 
 import java.time.Instant;
 
-public record GameCreateRequest(
-        @NotNull Integer number,
-        @NotBlank String processDefinitionId,
-        @NotBlank String name,
-        String description,
-        @NotNull @Future Instant startAt
-) {
+@lombok.Value
+@lombok.Builder
+public class GameCreateRequest {
+    private @NotNull Integer number;
+    private @NotBlank String processDefinitionId;
+    private @NotBlank String name;
+    private String description;
+    private @NotNull @Future Instant startAt;
 }

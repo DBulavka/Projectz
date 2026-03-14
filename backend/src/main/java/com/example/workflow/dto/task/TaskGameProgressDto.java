@@ -2,8 +2,10 @@ package com.example.workflow.dto.task;
 
 import java.util.List;
 
-public record TaskGameProgressDto(
-        int totalCodes,
-        int doneCodes,
-        List<TaskGameCodeDto> codes
-) {}
+@lombok.Value
+@lombok.Builder
+public class TaskGameProgressDto {
+    private int totalCodes;
+    private int doneCodes;
+    private List<TaskGameCodeDto> codes;
+}
