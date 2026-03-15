@@ -4,9 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
+import { DrawerModule } from 'primeng/drawer';
 import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
-import { SidebarModule } from 'primeng/sidebar';
 import { TableModule } from 'primeng/table';
 
 interface ProcessItem {
@@ -24,7 +24,7 @@ interface GameItem {
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule, SidebarModule, ButtonModule, MenuModule, CardModule, InputTextModule, TableModule],
+  imports: [CommonModule, FormsModule, DrawerModule, ButtonModule, MenuModule, CardModule, InputTextModule, TableModule],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
