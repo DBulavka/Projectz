@@ -1,26 +1,26 @@
 <div class="layout">
-  <p-sidebar [(visible)]="sidebarVisible" [modal]="false" [dismissible]="false" styleClass="app-sidebar">
+  <p-drawer [(visible)]="sidebarVisible" [modal]="false" [showCloseIcon]="false" styleClass="app-sidebar">
     <h2>Навигация</h2>
     <p-menu [model]="navItems"></p-menu>
-  </p-sidebar>
+  </p-drawer>
 
   <main class="content" [class.content-expanded]="!sidebarVisible">
     <button pButton type="button" icon="pi pi-bars" class="menu-toggle" (click)="sidebarVisible = !sidebarVisible"></button>
 
     <p-card *ngIf="activeSection === 'processes'" header="Процессы">
       <div class="form-grid">
-        <span class="p-float-label">
-          <input pInputText id="processName" [(ngModel)]="processForm.name" />
+        <div class="field">
           <label for="processName">Название процесса</label>
-        </span>
-        <span class="p-float-label">
-          <input pInputText id="processCode" [(ngModel)]="processForm.code" />
+          <input pInputText id="processName" [(ngModel)]="processForm.name" />
+        </div>
+        <div class="field">
           <label for="processCode">Код процесса</label>
-        </span>
-        <span class="p-float-label">
-          <input pInputText id="processOwner" [(ngModel)]="processForm.owner" />
+          <input pInputText id="processCode" [(ngModel)]="processForm.code" />
+        </div>
+        <div class="field">
           <label for="processOwner">Ответственный</label>
-        </span>
+          <input pInputText id="processOwner" [(ngModel)]="processForm.owner" />
+        </div>
       </div>
       <button pButton type="button" label="Добавить процесс" icon="pi pi-plus" (click)="addProcess()"></button>
 
@@ -44,18 +44,18 @@
 
     <p-card *ngIf="activeSection === 'games'" header="Игры">
       <div class="form-grid">
-        <span class="p-float-label">
-          <input pInputText id="gameTitle" [(ngModel)]="gameForm.title" />
+        <div class="field">
           <label for="gameTitle">Название игры</label>
-        </span>
-        <span class="p-float-label">
-          <input pInputText id="gameGenre" [(ngModel)]="gameForm.genre" />
+          <input pInputText id="gameTitle" [(ngModel)]="gameForm.title" />
+        </div>
+        <div class="field">
           <label for="gameGenre">Жанр</label>
-        </span>
-        <span class="p-float-label">
-          <input pInputText id="gameStatus" [(ngModel)]="gameForm.status" />
+          <input pInputText id="gameGenre" [(ngModel)]="gameForm.genre" />
+        </div>
+        <div class="field">
           <label for="gameStatus">Статус</label>
-        </span>
+          <input pInputText id="gameStatus" [(ngModel)]="gameForm.status" />
+        </div>
       </div>
       <button pButton type="button" label="Добавить игру" icon="pi pi-plus" (click)="addGame()"></button>
 

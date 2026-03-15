@@ -29,3 +29,13 @@
 .data-table {
   margin-top: 1rem;
 }
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.field input {
+  width: 100%;
+}
