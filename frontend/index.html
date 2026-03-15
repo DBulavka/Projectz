@@ -1,1 +1,124 @@
-<!doctype html><html><body><div id="root"></div><script type="module" src="/src/main.tsx"></script></body></html>
+<!doctype html>
+<html lang="ru" ng-app="workflowApp">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Workflow Angular Frontend</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 0; background: #f4f6f8; }
+      .wrap { max-width: 1200px; margin: 0 auto; padding: 16px; }
+      .card { background: white; border: 1px solid #d3d8de; border-radius: 8px; margin-bottom: 16px; padding: 16px; }
+      .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit,minmax(320px,1fr)); }
+      input, textarea, select { width: 100%; box-sizing: border-box; margin-top: 4px; padding: 8px; }
+      label { display:block; margin-bottom: 8px; }
+      button { margin-right: 8px; margin-top: 8px; padding: 8px 12px; }
+      ul { margin: 8px 0 0; padding-left: 20px; }
+      .msg { background:#e8f2ff; border:1px solid #90caf9; border-radius:6px; padding:10px; }
+    </style>
+  </head>
+  <body ng-controller="MainCtrl as vm">
+    <div class="wrap">
+      <h1>Workflow Frontend на Angular</h1>
+      <p class="msg" ng-if="vm.message">{{ vm.message }}</p>
+
+      <section class="card" ng-if="!vm.token">
+        <div class="grid">
+          <div>
+            <h2>Вход</h2>
+            <label>Email <input ng-model="vm.loginForm.email" /></label>
+            <label>Password <input type="password" ng-model="vm.loginForm.password" /></label>
+            <button ng-click="vm.login()">Войти</button>
+          </div>
+          <div>
+            <h2>Регистрация</h2>
+            <label>Email <input ng-model="vm.registerForm.email" /></label>
+            <label>Password <input type="password" ng-model="vm.registerForm.password" /></label>
+            <button ng-click="vm.register()">Зарегистрировать</button>
+          </div>
+        </div>
+      </section>
+
+      <div ng-if="vm.token">
+        <button ng-click="vm.logout()">Выйти</button>
+
+        <section class="card">
+          <h2>Процессы (список и редактирование)</h2>
+          <div class="grid">
+            <div>
+              <button ng-click="vm.loadProcesses()">Обновить</button>
+              <ul>
+                <li ng-repeat="p in vm.processes track by p.id">
+                  <button ng-click="vm.selectProcess(p.id)">{{p.name}} ({{p.key}})</button>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <label>Key <input ng-model="vm.processForm.key" /></label>
+              <label>Name <input ng-model="vm.processForm.name" /></label>
+              <label>Description <textarea ng-model="vm.processForm.description"></textarea></label>
+              <label>Category <input ng-model="vm.processForm.category" /></label>
+              <button ng-click="vm.createProcess()">Создать</button>
+              <button ng-disabled="!vm.selectedProcessId" ng-click="vm.updateProcess()">Сохранить</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>Версии (список и редактирование)</h2>
+          <div class="grid">
+            <div>
+              <button ng-click="vm.loadVersions()" ng-disabled="!vm.selectedProcessId">Загрузить версии</button>
+              <ul>
+                <li ng-repeat="v in vm.versions track by v.id">
+                  <button ng-click="vm.selectVersion(v.id)">v{{v.versionNumber}} / {{v.status}}</button>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <label>BPMN XML <textarea rows="10" ng-model="vm.versionForm.bpmnXml"></textarea></label>
+              <button ng-click="vm.createVersion()" ng-disabled="!vm.selectedProcessId">Создать версию</button>
+              <button ng-click="vm.saveVersion()" ng-disabled="!vm.selectedVersionId">Сохранить BPMN</button>
+              <button ng-click="vm.publishVersion()" ng-disabled="!vm.selectedVersionId">Опубликовать</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>Инстансы (список и форма запуска)</h2>
+          <div class="grid">
+            <div>
+              <button ng-click="vm.loadInstances()">Обновить</button>
+              <ul>
+                <li ng-repeat="ins in vm.instances track by ins.id">
+                  {{ins.id}} / {{ins.status}} / {{ins.processId}}
+                  <button ng-click="vm.cancelInstance(ins.id)">Отменить</button>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <label>Process ID <input ng-model="vm.startForm.processId" /></label>
+              <label>Business key <input ng-model="vm.startForm.businessKey" /></label>
+              <label>Variables JSON <textarea rows="6" ng-model="vm.startForm.variables"></textarea></label>
+              <button ng-click="vm.startInstance()">Запустить</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>Задачи (список и редактирование данных complete)</h2>
+          <label>Variables JSON <textarea rows="6" ng-model="vm.taskVariables"></textarea></label>
+          <button ng-click="vm.loadTasks()">Обновить задачи</button>
+          <ul>
+            <li ng-repeat="task in vm.tasks track by task.id">
+              {{task.name}} / {{task.id}}
+              <button ng-click="vm.completeTask(task.id)">Complete</button>
+            </li>
+          </ul>
+        </section>
+      </div>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular.min.js"></script>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
