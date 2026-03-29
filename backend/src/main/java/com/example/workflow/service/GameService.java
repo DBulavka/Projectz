@@ -148,7 +148,7 @@ public class GameService {
         return toRegistrationDto(gameRegistrationRepository.save(registration));
     }
 
-    @Scheduled(fixedDelayString = "${app.games.autostart-delay-ms:10000}")
+    @Scheduled(cron = "${app.games.autostart-cron}")
     @Transactional
     public void autoStartGames() {
         Instant now = Instant.now();
@@ -173,7 +173,7 @@ public class GameService {
         }
     }
 
-    @Scheduled(fixedDelayString = "${app.games.status-sync-delay-ms:10000}")
+@Scheduled(cron = "${app.games.status-sync-cron}")
     @Transactional
     public void syncGameInstanceStatuses() {
         List<GameInstance> activeInstances = gameInstanceRepository.findByStatusIn(List.of(GameInstanceStatus.IN_PROGRESS, GameInstanceStatus.PAUSED));

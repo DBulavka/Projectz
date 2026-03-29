@@ -24,3 +24,6 @@ app:
   jwt:
     secret: ${APP_JWT_SECRET:VGhpc0lzQVN1cGVyU2VjcmV0S2V5VGhhdElzQXRMZWFzdDMyQnl0ZXNMb25nISE=}
     expiration-sec: 86400
+  games:
+    autostart-cron: "*/1 * * * * *"
+    status-sync-cron: "*/1 * * * * *"
