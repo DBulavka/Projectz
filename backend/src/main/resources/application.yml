@@ -16,7 +16,7 @@ spring:
     change-log: classpath:db/changelog/db.changelog-master.sql
 flowable:
   database-schema-update: true
-  async-executor-activate: false
+  async-executor-activate: true
 springdoc:
   api-docs:
     path: /v3/api-docs
