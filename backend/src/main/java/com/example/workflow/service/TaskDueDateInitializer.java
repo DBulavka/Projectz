@@ -34,35 +34,43 @@ public class TaskDueDateInitializer {
 
     @Bean
     public EngineConfigurationConfigurer<SpringProcessEngineConfiguration> dueDateTaskListenerConfigurer() {
-        return configuration -> configuration.getEventDispatcher().addEventListener(new FlowableEventListener() {
-            @Override
-            public void onEvent(FlowableEvent event) {
-                if (event.getType() != FlowableEngineEventType.TASK_CREATED) {
-                    return;
+        return configuration -> {
+            List<FlowableEventListener> listeners = new ArrayList<>(
+                    Optional.ofNullable(configuration.getEventListeners()).orElseGet(List::of)
+            );
+
+            listeners.add(new FlowableEventListener() {
+                @Override
+                public void onEvent(FlowableEvent event) {
+                    if (event.getType() != FlowableEngineEventType.TASK_CREATED) {
+                        return;
+                    }
+                    if (!(event instanceof FlowableEntityEvent entityEvent) || !(entityEvent.getEntity() instanceof TaskEntity task)) {
+                        return;
+                    }
+
+                    Optional<Instant> dueDate = resolveDueDate(task, configuration.getRepositoryService());
+                    dueDate.ifPresent(instant -> configuration.getTaskService().setDueDate(task.getId(), Date.from(instant)));
                 }
-                if (!(event instanceof FlowableEntityEvent entityEvent) || !(entityEvent.getEntity() instanceof TaskEntity task)) {
-                    return;
+
+                @Override
+                public boolean isFailOnException() {
+                    return false;
                 }
 
-                Optional<Instant> dueDate = resolveDueDate(task, configuration.getRepositoryService());
-                dueDate.ifPresent(instant -> configuration.getTaskService().setDueDate(task.getId(), Date.from(instant)));
-            }
+                @Override
+                public boolean isFireOnTransactionLifecycleEvent() {
+                    return false;
+                }
 
-            @Override
-            public boolean isFailOnException() {
-                return false;
-            }
+                @Override
+                public String getOnTransaction() {
+                    return null;
+                }
+            });
 
-            @Override
-            public boolean isFireOnTransactionLifecycleEvent() {
-                return false;
-            }
-
-            @Override
-            public String getOnTransaction() {
-                return null;
-            }
-        });
+            configuration.setEventListeners(listeners);
+        };
     }
 
     private Optional<Instant> resolveDueDate(TaskEntity task, RepositoryService repositoryService) {
