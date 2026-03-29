@@ -1,6 +1,5 @@
 package com.example.workflow.service;
 
-import lombok.RequiredArgsConstructor;
 import org.flowable.bpmn.model.BoundaryEvent;
 import org.flowable.bpmn.model.BpmnModel;
 import org.flowable.bpmn.model.EventDefinition;
@@ -12,9 +11,8 @@ import org.flowable.common.engine.api.delegate.event.FlowableEntityEvent;
 import org.flowable.common.engine.api.delegate.event.FlowableEvent;
 import org.flowable.common.engine.api.delegate.event.FlowableEventListener;
 import org.flowable.engine.RepositoryService;
-import org.flowable.engine.TaskService;
-import org.flowable.spring.boot.EngineConfigurationConfigurer;
 import org.flowable.spring.SpringProcessEngineConfiguration;
+import org.flowable.spring.boot.EngineConfigurationConfigurer;
 import org.flowable.task.service.impl.persistence.entity.TaskEntity;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,46 +30,50 @@ import java.util.List;
 import java.util.Optional;
 
 @Configuration
-@RequiredArgsConstructor
 public class TaskDueDateInitializer {
-
-    private final RepositoryService repositoryService;
-    private final TaskService taskService;
 
     @Bean
     public EngineConfigurationConfigurer<SpringProcessEngineConfiguration> dueDateTaskListenerConfigurer() {
-        return configuration -> configuration.getEventDispatcher().addEventListener(new FlowableEventListener() {
-            @Override
-            public void onEvent(FlowableEvent event) {
-                if (event.getType() != FlowableEngineEventType.TASK_CREATED) {
-                    return;
+        return configuration -> {
+            List<FlowableEventListener> listeners = new ArrayList<>(
+                    Optional.ofNullable(configuration.getEventListeners()).orElseGet(List::of)
+            );
+
+            listeners.add(new FlowableEventListener() {
+                @Override
+                public void onEvent(FlowableEvent event) {
+                    if (event.getType() != FlowableEngineEventType.TASK_CREATED) {
+                        return;
+                    }
+                    if (!(event instanceof FlowableEntityEvent entityEvent) || !(entityEvent.getEntity() instanceof TaskEntity task)) {
+                        return;
+                    }
+
+                    Optional<Instant> dueDate = resolveDueDate(task, configuration.getRepositoryService());
+                    dueDate.ifPresent(instant -> configuration.getTaskService().setDueDate(task.getId(), Date.from(instant)));
                 }
-                if (!(event instanceof FlowableEntityEvent entityEvent) || !(entityEvent.getEntity() instanceof TaskEntity task)) {
-                    return;
+
+                @Override
+                public boolean isFailOnException() {
+                    return false;
                 }
 
-                Optional<Instant> dueDate = resolveDueDate(task);
-                dueDate.ifPresent(instant -> taskService.setDueDate(task.getId(), Date.from(instant)));
-            }
+                @Override
+                public boolean isFireOnTransactionLifecycleEvent() {
+                    return false;
+                }
 
-            @Override
-            public boolean isFailOnException() {
-                return false;
-            }
+                @Override
+                public String getOnTransaction() {
+                    return null;
+                }
+            });
 
-            @Override
-            public boolean isFireOnTransactionLifecycleEvent() {
-                return false;
-            }
-
-            @Override
-            public String getOnTransaction() {
-                return null;
-            }
-        });
+            configuration.setEventListeners(listeners);
+        };
     }
 
-    private Optional<Instant> resolveDueDate(TaskEntity task) {
+    private Optional<Instant> resolveDueDate(TaskEntity task, RepositoryService repositoryService) {
         BpmnModel bpmnModel = repositoryService.getBpmnModel(task.getProcessDefinitionId());
         if (bpmnModel == null || bpmnModel.getMainProcess() == null) {
             return Optional.empty();
