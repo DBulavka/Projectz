@@ -114,9 +114,9 @@ public class TaskServiceApp {
 
         List<String> enteredCodes = attempts.stream().map(GameCodeAttempt::getValue).toList();
         return SubmitGameCodeResponse.builder()
+                .correct(isCorrect)
                 .levelCompleted(levelCompleted)
                 .enteredCodes(enteredCodes)
-                .requiredCodes(requiredCodes)
                 .build();
     }
 

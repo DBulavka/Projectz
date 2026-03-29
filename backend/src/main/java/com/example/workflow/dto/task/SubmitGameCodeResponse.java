@@ -7,7 +7,7 @@ import lombok.Value;
 @Value
 @Builder
 public class SubmitGameCodeResponse {
+    boolean correct;
     boolean levelCompleted;
     List<String> enteredCodes;
-    List<String> requiredCodes;
 }
