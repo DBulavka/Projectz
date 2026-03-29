@@ -1,0 +1,80 @@
+<div class="layout">
+  <p-drawer [(visible)]="sidebarVisible" [modal]="false" [showCloseIcon]="false" styleClass="app-sidebar">
+    <h2>Навигация</h2>
+    <p-menu [model]="navItems"></p-menu>
+  </p-drawer>
+
+  <main class="content" [class.content-expanded]="!sidebarVisible">
+    <button pButton type="button" icon="pi pi-bars" class="menu-toggle" (click)="sidebarVisible = !sidebarVisible"></button>
+
+    <p-card *ngIf="activeSection === 'processes'" header="Процессы">
+      <div class="form-grid">
+        <div class="field">
+          <label for="processName">Название процесса</label>
+          <input pInputText id="processName" [(ngModel)]="processForm.name" />
+        </div>
+        <div class="field">
+          <label for="processCode">Код процесса</label>
+          <input pInputText id="processCode" [(ngModel)]="processForm.code" />
+        </div>
+        <div class="field">
+          <label for="processOwner">Ответственный</label>
+          <input pInputText id="processOwner" [(ngModel)]="processForm.owner" />
+        </div>
+      </div>
+      <button pButton type="button" label="Добавить процесс" icon="pi pi-plus" (click)="addProcess()"></button>
+
+      <p-table [value]="processes" styleClass="data-table">
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Название</th>
+            <th>Код</th>
+            <th>Ответственный</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-process>
+          <tr>
+            <td>{{ process.name }}</td>
+            <td>{{ process.code }}</td>
+            <td>{{ process.owner }}</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </p-card>
+
+    <p-card *ngIf="activeSection === 'games'" header="Игры">
+      <div class="form-grid">
+        <div class="field">
+          <label for="gameTitle">Название игры</label>
+          <input pInputText id="gameTitle" [(ngModel)]="gameForm.title" />
+        </div>
+        <div class="field">
+          <label for="gameGenre">Жанр</label>
+          <input pInputText id="gameGenre" [(ngModel)]="gameForm.genre" />
+        </div>
+        <div class="field">
+          <label for="gameStatus">Статус</label>
+          <input pInputText id="gameStatus" [(ngModel)]="gameForm.status" />
+        </div>
+      </div>
+      <button pButton type="button" label="Добавить игру" icon="pi pi-plus" (click)="addGame()"></button>
+
+      <p-table [value]="games" styleClass="data-table">
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Название</th>
+            <th>Жанр</th>
+            <th>Статус</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-game>
+          <tr>
+            <td>{{ game.title }}</td>
+            <td>{{ game.genre }}</td>
+            <td>{{ game.status }}</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </p-card>
+  </main>
+</div>

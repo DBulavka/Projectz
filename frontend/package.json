@@ -1,29 +1,30 @@
 {
   "name": "workflow-frontend",
+  "version": "1.0.0",
   "private": true,
-  "version": "0.0.1",
-  "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "start": "ng serve --host 0.0.0.0 --port 4200",
+    "build": "ng build",
+    "test": "ng test"
   },
   "dependencies": {
-    "@emotion/react": "^11.13.3",
-    "@emotion/styled": "^11.13.0",
-    "@mui/material": "^6.1.6",
-    "axios": "^1.7.7",
-    "bpmn-js": "^18.3.1",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-router-dom": "^6.28.0",
-    "zustand": "^5.0.1"
+    "@angular/animations": "^20.0.0",
+    "@angular/common": "^20.0.0",
+    "@angular/compiler": "^20.0.0",
+    "@angular/core": "^20.0.0",
+    "@angular/forms": "^20.0.0",
+    "@angular/platform-browser": "^20.0.0",
+    "@angular/platform-browser-dynamic": "^20.0.0",
+    "@angular/router": "^20.0.0",
+    "primeicons": "^7.0.0",
+    "@primeuix/themes": "^1.2.3",
+    "primeng": "^20.0.0",
+    "rxjs": "^7.8.1",
+    "zone.js": "^0.15.0"
   },
   "devDependencies": {
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
-    "@vitejs/plugin-react": "^4.3.3",
-    "typescript": "^5.6.3",
-    "vite": "^5.4.10"
+    "@angular/cli": "^20.0.0",
+    "@angular/compiler-cli": "^20.0.0",
+    "typescript": "^5.8.0"
   }
 }

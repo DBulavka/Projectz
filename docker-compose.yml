@@ -20,10 +20,8 @@ services:
 
   frontend:
     build: ./frontend
-    environment:
-      VITE_API_URL: http://localhost:8080
     depends_on: [backend]
-    ports: ["5173:5173"]
+    ports: ["5173:80"]
 
 volumes:
   pgdata:

@@ -1,0 +1,41 @@
+.layout {
+  min-height: 100vh;
+}
+
+:host ::ng-deep .app-sidebar {
+  width: 260px;
+}
+
+.content {
+  margin-left: 260px;
+  padding: 1.5rem;
+}
+
+.content-expanded {
+  margin-left: 0;
+}
+
+.menu-toggle {
+  margin-bottom: 1rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.data-table {
+  margin-top: 1rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.field input {
+  width: 100%;
+}
