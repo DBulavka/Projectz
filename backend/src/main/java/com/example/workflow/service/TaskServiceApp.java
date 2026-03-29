@@ -14,6 +14,7 @@ import com.example.workflow.repository.UserGroupMembershipRepository;
 import com.example.workflow.repository.UserGroupRepository;
 import com.example.workflow.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.time.DurationFormatUtils;
 import org.flowable.engine.HistoryService;
 import org.flowable.engine.RepositoryService;
 import org.flowable.engine.TaskService;
@@ -22,6 +23,7 @@ import org.flowable.task.api.history.HistoricTaskInstance;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -155,6 +157,7 @@ public class TaskServiceApp {
                 .processInstanceId(task.getProcessInstanceId())
                 .createTime(task.getCreateTime() == null ? null : task.getCreateTime().toInstant())
                 .dueDate(task.getDueDate() == null ? null : task.getDueDate().toInstant())
+                .duration(task.getDueDate() == null ? null : DurationFormatUtils.formatDurationHMS(Duration.between(task.getCreateTime().toInstant(), task.getDueDate().toInstant()).toMillis()))
                 .gameProgress(resolveGameProgress(task))
                 .build();
     }
