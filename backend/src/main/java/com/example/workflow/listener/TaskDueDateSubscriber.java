@@ -1,88 +1,35 @@
-package com.example.workflow.service;
+package com.example.workflow.listener;
 
 import org.flowable.bpmn.model.*;
 import org.flowable.bpmn.model.Process;
-import org.flowable.common.engine.api.delegate.event.FlowableEngineEventType;
-import org.flowable.common.engine.api.delegate.event.FlowableEntityEvent;
-import org.flowable.common.engine.api.delegate.event.FlowableEvent;
-import org.flowable.common.engine.api.delegate.event.FlowableEventListener;
 import org.flowable.engine.RepositoryService;
-import org.flowable.engine.runtime.ProcessInstance;
-import org.flowable.spring.SpringProcessEngineConfiguration;
-import org.flowable.spring.boot.EngineConfigurationConfigurer;
+import org.flowable.engine.TaskService;
 import org.flowable.task.service.impl.persistence.entity.TaskEntity;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.event.EventListener;
+import org.springframework.stereotype.Component;
 
 import java.time.*;
 import java.time.format.DateTimeParseException;
 import java.util.*;
 
-@Configuration
-public class TaskDueDateInitializer {
+@Component
+public class TaskDueDateSubscriber {
 
-    @Bean
-    public EngineConfigurationConfigurer<SpringProcessEngineConfiguration> dueDateTaskListenerConfigurer(
-            TelegramNotificationService telegramNotificationService
-    ) {
-        return configuration -> {
-            List<FlowableEventListener> listeners = new ArrayList<>(
-                    Optional.ofNullable(configuration.getEventListeners()).orElseGet(List::of)
-            );
+    private final RepositoryService repositoryService;
+    private final TaskService taskService;
 
-            listeners.add(new FlowableEventListener() {
-                @Override
-                public void onEvent(FlowableEvent event) {
-                    if (event.getType() != FlowableEngineEventType.TASK_CREATED) {
-                        return;
-                    }
-                    if (!(event instanceof FlowableEntityEvent entityEvent) || !(entityEvent.getEntity() instanceof TaskEntity task)) {
-                        return;
-                    }
-
-                    ProcessInstance processInstance = configuration.getRuntimeService()
-                            .createProcessInstanceQuery()
-                            .processInstanceId(task.getProcessInstanceId())
-                            .singleResult();
-
-                    Optional<Instant> dueDate = resolveDueDate(task, configuration.getRepositoryService());
-                    dueDate.ifPresent(instant -> configuration.getTaskService().setDueDate(task.getId(), Date.from(instant)));
-
-                    notifyAboutNewGameLevel(task, processInstance.getBusinessKey(), telegramNotificationService);
-                }
-
-                @Override
-                public boolean isFailOnException() {
-                    return false;
-                }
-
-                @Override
-                public boolean isFireOnTransactionLifecycleEvent() {
-                    return false;
-                }
-
-                @Override
-                public String getOnTransaction() {
-                    return null;
-                }
-            });
-
-            configuration.setEventListeners(listeners);
-        };
+    public TaskDueDateSubscriber(RepositoryService repositoryService, TaskService taskService) {
+        this.repositoryService = repositoryService;
+        this.taskService = taskService;
     }
 
-    private void notifyAboutNewGameLevel(TaskEntity task, String businessKey, TelegramNotificationService telegramNotificationService) {
-        if (task.getProcessInstanceId() == null || task.getProcessInstanceId().isBlank()) {
-            return;
-        }
-
-        telegramNotificationService.notifyGroup(
-                UUID.fromString(businessKey),
-                "Новый уровень: " + (task.getName() == null ? task.getTaskDefinitionKey() : task.getName())
-        );
+    @EventListener
+    public void onTaskCreated(TaskCreatedEvent event) {
+        TaskEntity task = event.task();
+        resolveDueDate(task).ifPresent(instant -> taskService.setDueDate(task.getId(), Date.from(instant)));
     }
 
-    private Optional<Instant> resolveDueDate(TaskEntity task, RepositoryService repositoryService) {
+    private Optional<Instant> resolveDueDate(TaskEntity task) {
         BpmnModel bpmnModel = repositoryService.getBpmnModel(task.getProcessDefinitionId());
         if (bpmnModel == null || bpmnModel.getMainProcess() == null) {
             return Optional.empty();
