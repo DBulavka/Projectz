@@ -133,3 +133,27 @@ CREATE INDEX IF NOT EXISTS idx_game_instance_status
 
 CREATE INDEX IF NOT EXISTS idx_game_instance_instance
     ON game_instance(process_instance_id);
+
+--changeset codex:3
+CREATE TABLE IF NOT EXISTS user_group_telegram_chat (
+    id UUID PRIMARY KEY,
+    group_id UUID NOT NULL,
+    chat_id VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    CONSTRAINT fk_group_telegram_chat_group FOREIGN KEY (group_id) REFERENCES user_group(id) ON DELETE CASCADE,
+    CONSTRAINT uq_group_telegram_chat UNIQUE (group_id, chat_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_group_telegram_chat_group
+    ON user_group_telegram_chat(group_id);
+
+--changeset codex:4
+CREATE TABLE IF NOT EXISTS group_type_telegram_bot (
+    id UUID PRIMARY KEY,
+    group_type_id UUID NOT NULL,
+    bot_token VARCHAR(1024) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    CONSTRAINT fk_group_type_telegram_bot_group_type FOREIGN KEY (group_type_id) REFERENCES group_type(id) ON DELETE CASCADE,
+    CONSTRAINT uq_group_type_telegram_bot UNIQUE (group_type_id)
+);

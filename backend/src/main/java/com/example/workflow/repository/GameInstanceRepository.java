@@ -15,4 +15,6 @@ public interface GameInstanceRepository extends JpaRepository<GameInstance, UUID
     List<GameInstance> findByGameId(UUID gameId);
 
     List<GameInstance> findByStatusIn(Collection<GameInstanceStatus> statuses);
+
+    Optional<GameInstance> findByProcessInstanceId(String processInstanceId);
 }

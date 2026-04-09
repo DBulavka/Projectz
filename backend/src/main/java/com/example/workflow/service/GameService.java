@@ -40,6 +40,7 @@ public class GameService {
     private final RepositoryService repositoryService;
     private final RuntimeService runtimeService;
     private final HistoryService historyService;
+    private final TelegramNotificationService telegramNotificationService;
 
     @Transactional
     public GameDto create(GameCreateRequest req) {
@@ -165,6 +166,10 @@ public class GameService {
                 );
 
                 upsertGameInstance(game.getId(), registration.getGroupId(), processInstance.getProcessInstanceId(), GameInstanceStatus.IN_PROGRESS, now);
+                telegramNotificationService.notifyGroup(
+                        registration.getGroupId(),
+                        "Игра \"" + game.getName() + "\" началась."
+                );
             }
 
             game.setStartedAt(now);
@@ -207,6 +212,12 @@ public class GameService {
             gameInstance.setStatus(deleteReason == null ? GameInstanceStatus.COMPLETED : GameInstanceStatus.CANCELLED);
             gameInstance.setUpdatedAt(now);
             gameInstanceRepository.save(gameInstance);
+
+            gameRepository.findById(gameInstance.getGameId())
+                    .ifPresent(game -> telegramNotificationService.notifyGroup(
+                            gameInstance.getGroupId(),
+                            "Игра \"" + game.getName() + "\" завершена со статусом: " + gameInstance.getStatus().name()
+                    ));
         }
     }
 
