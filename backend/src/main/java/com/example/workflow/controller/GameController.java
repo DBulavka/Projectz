@@ -1,10 +1,6 @@
 package com.example.workflow.controller;
 
-import com.example.workflow.dto.game.GameCreateRequest;
-import com.example.workflow.dto.game.GameDto;
-import com.example.workflow.dto.game.GameRegistrationDto;
-import com.example.workflow.dto.game.GameRegistrationRequest;
-import com.example.workflow.dto.game.GameInstanceDto;
+import com.example.workflow.dto.game.*;
 import com.example.workflow.service.GameService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +32,11 @@ public class GameController {
     @GetMapping("/api/admin/games/{gameId}/instances")
     public List<GameInstanceDto> listInstances(@PathVariable UUID gameId) {
         return gameService.listInstances(gameId);
+    }
+
+    @PostMapping("/api/admin/games/start")
+    public GameInstanceDto startGame(@RequestBody(required = false) GameStartRequest gameStartRequest) {
+        return gameService.startGame(gameStartRequest);
     }
 
     @PostMapping("/api/games/{gameId}/registrations")

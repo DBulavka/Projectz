@@ -1,9 +1,6 @@
 package com.example.workflow.service;
 
-import com.example.workflow.dto.game.GameCreateRequest;
-import com.example.workflow.dto.game.GameDto;
-import com.example.workflow.dto.game.GameRegistrationDto;
-import com.example.workflow.dto.game.GameInstanceDto;
+import com.example.workflow.dto.game.*;
 import com.example.workflow.entity.Game;
 import com.example.workflow.entity.GameRegistration;
 import com.example.workflow.entity.GameInstance;
@@ -28,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -149,6 +147,21 @@ public class GameService {
         return toRegistrationDto(gameRegistrationRepository.save(registration));
     }
 
+    @Transactional
+    public GameInstanceDto startGame(GameStartRequest gameStartRequest) {
+        Game game = gameRepository.findById(gameStartRequest.getGameId())
+                .orElseThrow(() -> new ApiException("Game not found"));
+
+        telegramNotificationService.notifyGroup(
+                gameStartRequest.getGroupId(),
+                "Игра \"" + game.getName() + "\" началась."
+        );
+
+        ProcessInstance processInstance = runtimeService.startProcessInstanceById(game.getProcessDefinitionId(), gameStartRequest.getGroupId().toString());
+        GameInstance gameInstance = upsertGameInstance(game.getId(), gameStartRequest.getGroupId(), processInstance.getProcessInstanceId(), GameInstanceStatus.IN_PROGRESS, Instant.now());
+        return toInstanceDto(gameInstance);
+    }
+
     @Scheduled(cron = "${app.games.autostart-cron}")
     @Transactional
     public void autoStartGames() {
@@ -221,8 +234,8 @@ public class GameService {
         }
     }
 
-    private void upsertGameInstance(UUID gameId, UUID groupId, String processInstanceId, GameInstanceStatus status, Instant now) {
-        gameInstanceRepository.findByGameIdAndGroupId(gameId, groupId)
+    private GameInstance upsertGameInstance(UUID gameId, UUID groupId, String processInstanceId, GameInstanceStatus status, Instant now) {
+        return gameInstanceRepository.findByGameIdAndGroupId(gameId, groupId)
                 .map(existing -> {
                     existing.setProcessInstanceId(processInstanceId);
                     existing.setStatus(status);
