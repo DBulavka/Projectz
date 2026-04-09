@@ -1,5 +1,6 @@
 package com.example.workflow.service;
 
+import com.example.workflow.repository.GameInstanceRepository;
 import org.flowable.bpmn.model.BoundaryEvent;
 import org.flowable.bpmn.model.BpmnModel;
 import org.flowable.bpmn.model.EventDefinition;
@@ -33,7 +34,10 @@ import java.util.Optional;
 public class TaskDueDateInitializer {
 
     @Bean
-    public EngineConfigurationConfigurer<SpringProcessEngineConfiguration> dueDateTaskListenerConfigurer() {
+    public EngineConfigurationConfigurer<SpringProcessEngineConfiguration> dueDateTaskListenerConfigurer(
+            GameInstanceRepository gameInstanceRepository,
+            TelegramNotificationService telegramNotificationService
+    ) {
         return configuration -> {
             List<FlowableEventListener> listeners = new ArrayList<>(
                     Optional.ofNullable(configuration.getEventListeners()).orElseGet(List::of)
@@ -51,6 +55,8 @@ public class TaskDueDateInitializer {
 
                     Optional<Instant> dueDate = resolveDueDate(task, configuration.getRepositoryService());
                     dueDate.ifPresent(instant -> configuration.getTaskService().setDueDate(task.getId(), Date.from(instant)));
+
+                    notifyAboutNewGameLevel(task, gameInstanceRepository, telegramNotificationService);
                 }
 
                 @Override
@@ -71,6 +77,20 @@ public class TaskDueDateInitializer {
 
             configuration.setEventListeners(listeners);
         };
+    }
+
+    private void notifyAboutNewGameLevel(TaskEntity task,
+                                         GameInstanceRepository gameInstanceRepository,
+                                         TelegramNotificationService telegramNotificationService) {
+        if (task.getProcessInstanceId() == null || task.getProcessInstanceId().isBlank()) {
+            return;
+        }
+
+        gameInstanceRepository.findByProcessInstanceId(task.getProcessInstanceId())
+                .ifPresent(gameInstance -> telegramNotificationService.notifyGroup(
+                        gameInstance.getGroupId(),
+                        "Новый уровень: " + (task.getName() == null ? task.getTaskDefinitionKey() : task.getName())
+                ));
     }
 
     private Optional<Instant> resolveDueDate(TaskEntity task, RepositoryService repositoryService) {
