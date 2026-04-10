@@ -17,7 +17,9 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.time.DurationFormatUtils;
 import org.flowable.engine.HistoryService;
 import org.flowable.engine.RepositoryService;
+import org.flowable.engine.RuntimeService;
 import org.flowable.engine.TaskService;
+import org.flowable.engine.runtime.ProcessInstance;
 import org.flowable.task.api.Task;
 import org.flowable.task.api.history.HistoricTaskInstance;
 import org.springframework.stereotype.Service;
@@ -40,6 +42,8 @@ public class TaskServiceApp {
     private final GroupTypeRepository groupTypeRepository;
     private final GameLevelCodeRepository gameLevelCodeRepository;
     private final GameCodeAttemptRepository gameCodeAttemptRepository;
+    private final NotificationService notificationService;
+    private final RuntimeService runtimeService;
 
     @Transactional
     public List<TaskDto> myTaskDtos(String groupTypeCode) {
@@ -110,8 +114,24 @@ public class TaskServiceApp {
                 .map(String::toLowerCase)
                 .allMatch(enteredCorrectCodes::contains);
 
+        TaskGameProgressDto progress = resolveGameProgress(task);
+        UUID groupId = resolveGroupId(task);
+        String levelName = task.getName() == null ? task.getTaskDefinitionKey() : task.getName();
+
+        notificationService.notifyCodeInputResult(
+                groupId,
+                levelName,
+                isCorrect,
+                isCorrect ? "Код принят." : "Код не найден среди правильных."
+        );
+
+        if (progress != null) {
+            notificationService.notifyCurrentLevelStatus(groupId, levelName, progress.getCodes());
+        }
+
         if (levelCompleted) {
             taskService.complete(taskId);
+            notificationService.notifyLevelCompleted(groupId, levelName);
         }
 
         List<String> enteredCodes = attempts.stream().map(GameCodeAttempt::getValue).toList();
@@ -207,6 +227,17 @@ public class TaskServiceApp {
     }
     private Map<String, Object> variablesOrEmpty(CompleteTaskRequest req) {
         return req.getVariables() == null ? Map.of() : req.getVariables();
+    }
+
+    private UUID resolveGroupId(Task task) {
+        ProcessInstance processInstance = runtimeService.createProcessInstanceQuery()
+                .processInstanceId(task.getProcessInstanceId())
+                .singleResult();
+        if (processInstance == null || processInstance.getBusinessKey() == null || processInstance.getBusinessKey().isBlank()) {
+            throw new ApiException("Task is not linked to a group");
+        }
+
+        return UUID.fromString(processInstance.getBusinessKey());
     }
 
     private Set<UUID> resolveUserGroupIds(String groupTypeCode) {

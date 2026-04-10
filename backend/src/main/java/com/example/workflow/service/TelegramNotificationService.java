@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class TelegramNotificationService {
+public class TelegramNotificationService implements NotificationSender {
     private final UserGroupTelegramChatRepository telegramChatRepository;
     private final UserGroupRepository userGroupRepository;
     private final GroupTypeTelegramBotRepository groupTypeTelegramBotRepository;
