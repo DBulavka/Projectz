@@ -1,6 +1,6 @@
 package com.example.workflow.listener;
 
-import com.example.workflow.service.TelegramNotificationService;
+import com.example.workflow.service.NotificationService;
 import org.flowable.engine.RuntimeService;
 import org.flowable.engine.runtime.ProcessInstance;
 import org.flowable.task.service.impl.persistence.entity.TaskEntity;
@@ -13,14 +13,14 @@ import java.util.UUID;
 public class TaskNotificationSubscriber {
 
     private final RuntimeService runtimeService;
-    private final TelegramNotificationService telegramNotificationService;
+    private final NotificationService notificationService;
 
     public TaskNotificationSubscriber(
             RuntimeService runtimeService,
-            TelegramNotificationService telegramNotificationService
+            NotificationService notificationService
     ) {
         this.runtimeService = runtimeService;
-        this.telegramNotificationService = telegramNotificationService;
+        this.notificationService = notificationService;
     }
 
     @EventListener
@@ -38,9 +38,9 @@ public class TaskNotificationSubscriber {
             return;
         }
 
-        telegramNotificationService.notifyGroup(
+        notificationService.notifyNewLevel(
                 UUID.fromString(processInstance.getBusinessKey()),
-                "Новый уровень: " + (task.getName() == null ? task.getTaskDefinitionKey() : task.getName())
+                task.getName() == null ? task.getTaskDefinitionKey() : task.getName()
         );
     }
 }

@@ -38,7 +38,7 @@ public class GameService {
     private final RepositoryService repositoryService;
     private final RuntimeService runtimeService;
     private final HistoryService historyService;
-    private final TelegramNotificationService telegramNotificationService;
+    private final NotificationService notificationService;
 
     @Transactional
     public GameDto create(GameCreateRequest req) {
@@ -152,10 +152,7 @@ public class GameService {
         Game game = gameRepository.findById(gameStartRequest.getGameId())
                 .orElseThrow(() -> new ApiException("Game not found"));
 
-        telegramNotificationService.notifyGroup(
-                gameStartRequest.getGroupId(),
-                "Игра \"" + game.getName() + "\" началась."
-        );
+        notificationService.notifyGameStarted(gameStartRequest.getGroupId(), game.getName());
 
         ProcessInstance processInstance = runtimeService.startProcessInstanceById(game.getProcessDefinitionId(), gameStartRequest.getGroupId().toString());
         GameInstance gameInstance = upsertGameInstance(game.getId(), gameStartRequest.getGroupId(), processInstance.getProcessInstanceId(), GameInstanceStatus.IN_PROGRESS, Instant.now());
@@ -179,10 +176,7 @@ public class GameService {
                 );
 
                 upsertGameInstance(game.getId(), registration.getGroupId(), processInstance.getProcessInstanceId(), GameInstanceStatus.IN_PROGRESS, now);
-                telegramNotificationService.notifyGroup(
-                        registration.getGroupId(),
-                        "Игра \"" + game.getName() + "\" началась."
-                );
+                notificationService.notifyGameStarted(registration.getGroupId(), game.getName());
             }
 
             game.setStartedAt(now);
@@ -227,9 +221,10 @@ public class GameService {
             gameInstanceRepository.save(gameInstance);
 
             gameRepository.findById(gameInstance.getGameId())
-                    .ifPresent(game -> telegramNotificationService.notifyGroup(
+                    .ifPresent(game -> notificationService.notifyGameCompleted(
                             gameInstance.getGroupId(),
-                            "Игра \"" + game.getName() + "\" завершена со статусом: " + gameInstance.getStatus().name()
+                            game.getName(),
+                            gameInstance.getStatus()
                     ));
         }
     }
